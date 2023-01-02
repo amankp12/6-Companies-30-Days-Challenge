@@ -1,0 +1,40 @@
+299. Bulls and Cows
+https://leetcode.com/problems/bulls-and-cows/description/
+
+Algorithm
+The idea is to count the 'bulls' and add the other digits in the guess into a hash map, and then count the 'cows' while updating the relevant hash map elements.
+
+Complexity
+We loop over the vector twice, each time performing O(1) actions, so the time is O(2N), which is O(N).
+
+Code
+
+class Solution {
+public:
+    string getHint(string secret, string guess) {
+        unordered_map<int, int> hash;
+        int a = 0, b = 0;
+        // Count 'bulls' and put rest of guess digits into hash map
+        for (int i = 0; i < guess.size(); ++i)
+        {
+            if (secret[i] == guess[i])
+                b++;
+            else if (hash[guess[i]])
+                ++hash[guess[i]];
+            else
+                hash[guess[i]] = 1;
+        }
+        // Count 'cows' and reduce relevant counts in hash map
+        for (int i = 0; i < secret.size(); ++i)
+        {
+            if (hash.count(secret[i]) && secret[i] != guess[i])
+            {
+                a++;
+                hash[secret[i]]--;
+                if (!hash[secret[i]])
+                    hash.erase(secret[i]);
+            }
+        }
+        return to_string(b) + "A" + to_string(a) + "B";
+    }
+};
