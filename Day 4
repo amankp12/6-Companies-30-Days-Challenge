@@ -1,0 +1,444 @@
+396. Rotate Function
+https://leetcode.com/problems/rotate-function/
+
+Intuition
+By Sliding window approach
+
+Approach
+original array[] = {4,3,2,6}
+F1(original array) = 40 + 31 + 22 + 63
+
+upon 1 rotation = {6,4,3,2}
+F2 = 60 + 41 + 32 + 23
+
+What do we observe between F1 AND F2
+i) We observe that we multiply each element of original array (except the last one) with one more than the previous time.
+
+Earlier 40 + 31 + 22 + 63
+Now 60 + 41 + 32 + 23
+
+How we get from earlier to now
+( 40 + 31 + 22 + 36 ) + (4+3+2+6) - 6*4 = now
+now = earlier + sum - (last element * n)
+where
+n = size of array here n = 4
+sum = sum of original array elements.
+
+Complexity
+Time complexity: O(n)
+Space complexity: O(1)
+Code
+class Solution {
+public:
+    int maxRotateFunction(vector<int>& nums) {
+    
+        long sum = 0,original = 0;
+        
+        for(int i=0;i<nums.size();i++){
+            sum += nums[i];
+            original += i*nums[i];
+        }
+        
+        long maximum = original;
+        int n = nums.size();
+        
+        for(int i= n-1;i>=0;i--)
+        {
+            original += sum -(nums[i]*n);
+            maximum = max(original,maximum);
+        }
+        return maximum;
+    }   
+};
+
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+368. Largest Divisible Subset
+https://leetcode.com/problems/largest-divisible-subset/
+
+We are given an array nums and we need to return the largest subset ans such that when we consider any pair of elements (ans[i], ans[j]), then
+
+ans[i] % ans[j] == 0 or,
+ans[j] % ans[i] == 0.
+This just means that the larger number should divide the smaller in any pair.
+
+
+
+
+
+
+Solution - I (Brute-Force)
+
+Let's try to solve this using brute-force approach. For every element, we have the choice to either pick it or not pick it. 
+An element can only be picked when it satisfies the above condition. So, before picking any element, we need to check if either of the above 2 conditions are
+satisfied or not with each of the element already present in current subset.
+
+But there's an important observation that allows us to optimize the above checking process. If the largest number in subset formed till now divides the next element
+to be chosen, then every other element in the subset will divide it as well (because subset formed till now follows above conditions).
+For eg. Consider our subset till now is [1,2,6] and next element is 12. If 12 divides largest element of subset - 6, it will divide every other element as well.
+Try for other examples yourself.
+
+Firstly, for us to use the above observervation, it means the next element should be greater than all existing elements of subset.
+Then, we can just check if largest element in subset till now divides it completely. If yes, the required condition is satisfied and we can choose this element.
+
+So, we will sort the nums and consider elements to be inserted into subset in increasing order. The process will be as follows -
+
+Initially, subset is empty, so any any element can be a valid starting point. Try for each and see which yield largest subset.
+If subset is not empty, let the last chosen element be nums[start]. Then we consider every element at index next where start < next< n to be chosen next.
+It will be chosen only if nums[next] % nums[start] == 0.
+We recursively repeat the above process considering nums[next] to be previous chosen element and this continues till we reach end of array.
+At every recursion step, we will return the largest susbet that's possible when nums[start] was the previous chosen element.
+class Solution {
+public:
+    vector<int> largestDivisibleSubset(vector<int>& nums) {
+        sort(begin(nums), end(nums));
+        vector<int> ans;
+        for(int i = 0; i < size(nums); i++) {         // any element is valid choice for 1st subset member
+            auto res = solve(nums, i);                // try for each & obtain largest subset when nums[i] is starting element
+            if(size(res) > size(ans)) ans = res;      // keep track of largest subset found
+        }
+        return ans;
+    }
+    vector<int> solve(vector<int>& nums, int start) {
+        if(start >= size(nums)) return {};                      // no subset possible when start >= size(nums)
+        vector<int> ans;
+        for(int next = start+1; next < size(nums); next++) {    // try next elements 
+            if(nums[next] % nums[start]) continue;              // only those completely divided by nums[start] are valid choice
+            auto res = solve(nums, next);                       // res = largest subset on choosing nums[next]
+            if(size(res) >= size(ans)) ans = res;               // ans = largest subset till now when nums[start] is previous element
+        }
+        ans.push_back(nums[start]);                             // we didnt include nums[start] in ans. Add it as well
+        return ans;                                             // return largest subset starting with num[start]
+    }
+};
+Time Complexity : O(N*2N) , where N is the number of elements in nums array. The recurrence equation for solve() can be written as -
+
+                                       ↓ for making copies of subset array
+T(N) = T(N-1)+T(N-2)+T(N-3)+...+T(1) + N = T(N-1)+T(N-1) + N => T(N) = 2T(N-1) + N
+=> T(N) = 2T(N-1) + N
+Solving this using substitution method, we get time complexity as O(2N) and we make this call N times resulting in total of O(N*2N) .
+Space Complexity : O(N), required by implicit recursive stack
+
+
+
+
+
+
+Solution - II (Dynamic Programming - Memoization)
+
+Drawing out the recursive tree diagram for above solution, we can find that there lots of repeated function calls and redundant calculations.
+We can avoid these unnecessary calculations by memoizing the results and reusing them in future calls.
+
+Here, we use dp to store the largest subset starting with ith index element. Once dp[i] is calculated, its result can be reused in future calls again
+instead of recalculating it.
+
+class Solution {
+public:
+    unordered_map<int, vector<int>> dp;
+    vector<int> largestDivisibleSubset(vector<int>& nums) {
+        sort(begin(nums), end(nums));
+        vector<int> ans;
+        for(int i = 0; i < size(nums); i++) {
+            auto res = solve(nums, i);
+            if(size(res) > size(ans)) ans = res;
+        }
+        return ans;
+    }
+    vector<int> solve(vector<int>& nums, int start) {
+        if(start >= size(nums)) return {};
+        if(dp.count(start)) return dp[start];
+        for(int next = start+1; next < size(nums); next++) {
+            if(nums[next] % nums[start]) continue;
+            auto res = solve(nums, next);
+            if(size(res) >= size(dp[start])) dp[start] = res;
+        }
+        dp[start].push_back(nums[start]);
+        return dp[start];
+    }
+};
+Time Complexity : O(N3) ,
+
+For each i from [0...N], the largest subset is calculated once.
+For each calculation, we make O(N) iterations from j = [i...N].
+In each of those iteration, we are making a copy of array of largest subset that we get on picking jth element. This size of subset array is bounded by O(N)
+and thus requires additional O(N) time.
+Thus, combining all of this together, the overall time complexity becomes O(N*N*N) = O(N3)
+Space Complexity : O(N2), required for memoizing all largest subset results in dp.
+
+
+
+
+
+Solution - III (Optimized Dynamic Programming - Memoization)
+
+In the above approach, we were memoizing largest subset starting at ith index and each time returning a copy of that subset back to top of recursion tree.
+This leads to higher time as well as space comeplexity. But there exists another approach that we could use here to do it efficiently.
+
+Instead of explicitly generating the largest subset for every index, we can find only the size of largest subset starting at i (given by dp[i])
+and then try to reconstruct it. To reconstruct the largest subset, we can keep track of successor element that leads to largest subset starting at index i.
+This reconstruction is similar to the logic used in LIS.
+
+class Solution {
+public:
+    vector<int> dp, succ, ans;
+    vector<int> largestDivisibleSubset(vector<int>& nums) {
+        sort(begin(nums), end(nums));
+		// initially dp[i]=1 since we can always form subset of size=1 starting at i. 
+		// succ[i]= ∞  because we havent found any successors for any subset yet
+        dp.resize(size(nums), 1), succ.resize(size(nums), INT_MAX);
+        for(int i = 0; i < size(nums); i++)  solve(nums, i);
+		// reconstruct starting from index where largest subset starts till the end. succ[i] gives next element after each index
+        for(int i = distance(begin(dp), max_element(begin(dp), end(dp))); i < size(nums); i = succ[i]) 
+            ans.push_back(nums[i]);
+        return ans;
+    }
+    int solve(vector<int>& nums, int start) {
+        if(start >= size(nums)) return 0;
+        if(dp[start] != 1) return dp[start];   // initially all dp[i]=1. But if it's updated to store largest subset size, just return it.
+        for(int next = start+1; next < size(nums); next++) {
+            if(nums[next] % nums[start]) continue;
+            int size = solve(nums, next);
+            if(dp[start] < size + 1) {   // if choosing subset start at nums[next] gives bigger subset at start, choose it
+                dp[start] = size + 1;    // update dp[i] to store size of largest subset
+                succ[start] = next;      // next element at dp[i] which yields largest subset
+            }
+        }
+        return dp[start];
+    }
+};
+Time Complexity : O(N2) , we require O(NlogN) for sorting and then each dp[i] is computed once by calling solve. solve takes O(N) and is called N times.
+Thus O(N2) for computing the dp array.
+The reconstruction of largest subset is done in O(N). Thus, the total time complexity is O(NlogN + N2 + N) ~ O(N2)
+Space Complexity : O(N), required for maintaining dp and succ array
+
+
+
+
+Solution - IV (Optimized Dynamic Programming - Tabulation)
+
+The logic is similar to what's used in the previous approach with only change being that we are doing it from bottom-up iteratively.
+
+We keep a dp array where dp[i] stores the size of largest subset ending at i. We also keep another array pred where pred[i] is used to track the predecessors
+or previous element of subset ending at ith index. This will help us in reconstructing the largest subset, just as succ did in above approach.
+
+Once we fill up the dp array, we will start at the index max_i having maximum value of dp[i] and reconstruct our subset from that.
+pred[max_i] will give us the previous element in largest subset that ended at max_i. We can iteratively perform search till max_i > 0 and
+push each element into ans, and finally return the ans array which would be the required largest subset.
+
+class Solution {
+public:
+    vector<int> largestDivisibleSubset(vector<int>& nums) {
+        sort(begin(nums), end(nums));
+        int n = size(nums), max_i = 0;
+		// initially dp[i]=1 since we can always form subset of size=1 ending at i. 
+		// pred[i]=-1 because we havent found any predecessors for any subset yet
+        vector<int> dp(n, 1), pred(n, -1), ans;
+        for(int i = 1; i < n; i++) {          
+            for(int j = 0; j < i; j++)     
+				// nums[i] should divide nums[j] if it is to be included in its subset (i.e dp[j])
+				// only include nums[i] in subset ending at j if resultant subset size (dp[j]+1) is larger than already possible (dp[i])
+                if(nums[i] % nums[j] == 0 && dp[i] < dp[j]+1)
+                    dp[i] = dp[j]+1, pred[i] = j;  // jth element will be predecessor to subset ending at ith element
+            if(dp[i] > dp[max_i]) max_i = i;       // keep track of index where largest subset ends
+        }
+		// start with index where largest subset ended. Reconstruct from that point to the start
+        for(; max_i >= 0; max_i = pred[max_i]) 
+            ans.push_back(nums[max_i]);
+        return ans;
+    }
+};
+
+Time Complexity : O(N2) , we require O(NlogN) for sorting and then O(N2) for computing the dp array and then O(N) for reconstruction of subset giving total
+time complexity of O(NlogN + N2 + N) ~ O(N2)
+Space Complexity : O(N), required for maintaining dp and pred array
+
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+391. Perfect Rectangle
+https://leetcode.com/problems/perfect-rectangle/
+
+Let's say that the rectangles form a picture (including the information that whether each grid is covered and how much times the grid is covered. A grid is an 1*1 area where all the vertex of the area have integer coordinates). We want to use a set of values of points to represent this picture.
+We may record the value of each points of the picture. When the picture is empty we say that the value of each point is 0. For each rectangle added to this picture, say rectangles[i] = [xi, yi, ai, bi] is added, we do the following operations:
+point [xi, yi] has its value +1;
+point [xi, bi] has its value -1;
+point [ai, yi] has its value -1;
+point [ai, bi] has its value +1;
+After adding all the rectangles, the result is the set of values of points representing this picture. Let's call it the value representation of this picture. For example, for the examples given in the problem, the value representation should be as follows:
+For example 1:
+point [1,1] has value 1
+point [1,4] has value -1
+point [4,1] has value -1
+point [4,4] has value 1
+all other points have value 0
+
+For example 3:
+point [1,1] has value 1
+point [1,4] has value -1
+point [4,1] has value -1
+point [4,4] has value 1
+point [2,2] has value 1
+point [2,3] has value -1
+point [3,2] has value -1
+point [3,3] has value 1
+all other points have value 0
+
+The value representation has an important property that it's determined by the final picture and is independent of how you added each part of the picture. It's because that the value representation of a whole rectangle is the same as the value representation of all grids of the rectangle combined. Therefore, to see whether the picture is a perfect rectangle becomes very easy: We just see whether there are only 4 points having nonzero value and whether their values are +1 or -1.
+
+Use structure like unordered_map, the complexity is O(n). The following code is easy to understand but costs O(n logn) because I used map rather than unordered_map, since there's no default hash for pair<int, int>:
+
+class Solution {
+public:
+    bool isRectangleCover(vector<vector<int>>& rectangles) {
+        map<pair<int, int>, int> mark;
+        for(vector<int>& x:rectangles){
+            mark[{x[0], x[1]}]++;
+            mark[{x[0], x[3]}]--;
+            mark[{x[2], x[1]}]--;
+            mark[{x[2], x[3]}]++;
+        }
+        int n_mark=0;
+        for(auto ptr=mark.begin();ptr!=mark.end();ptr++)
+            if(ptr->second!=0){
+                if(abs(ptr->second)!=1) return false;
+                n_mark++;
+            }
+        return n_mark==4;
+    }
+};
+And the following is the true O(n) solution:
+
+class Solution {
+public:
+    bool isRectangleCover(vector<vector<int>>& rectangles) {
+        unordered_map<long long, int> mark;
+        const long long N=1000000;
+        for(vector<int>& x:rectangles){
+            int x1=x[0];
+            int y1=x[1];
+            int x2=x[2];
+            int y2=x[3];
+            mark[x1*N+y1]++;
+            mark[x1*N+y2]--;
+            mark[x2*N+y1]--;
+            mark[x2*N+y2]++;
+        }
+        int n_mark=0;
+        for(auto ptr=mark.begin();ptr!=mark.end();ptr++)
+            if(ptr->second!=0){
+                if(abs(ptr->second)!=1) return false;
+                n_mark++;
+            }
+        return n_mark==4;
+    }
+};
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+207. Course Schedule
+https://leetcode.com/problems/course-schedule/
+
+This problem is equivalent to detecting a cycle in the directed graph represented by prerequisites. Both BFS and DFS can be used to solve it using the idea of topological sort. Since pair<int, int> is inconvenient for implementing graph algorithms, we first transform it to the adjacency-list representation. If course u is a prerequisite of course v, then the adjacency list of u will contain v.
+
+BFS
+
+BFS uses the indegrees of each node. We will first try to find a node with 0 indegree. If we fail to do so, there must be a cycle in the graph and we return false. Otherwise we set its indegree to be -1 to prevent from visiting it again and reduce the indegrees of its neighbors by 1. This process will be repeated for n (number of nodes) times.
+
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<pair<int, int>>& prerequisites) {
+        graph g = buildGraph(numCourses, prerequisites);
+        vector<int> degrees = computeIndegrees(g);
+        for (int i = 0; i < numCourses; i++) {
+            int j = 0;
+            for (; j < numCourses; j++) {
+                if (!degrees[j]) {
+                    break;
+                }
+            }
+            if (j == numCourses) {
+                return false;
+            }
+            degrees[j]--;
+            for (int v : g[j]) {
+                degrees[v]--;
+            }
+        }
+        return true;
+    }
+private:
+    typedef vector<vector<int>> graph;
+    
+    graph buildGraph(int numCourses, vector<pair<int, int>>& prerequisites) {
+        graph g(numCourses);
+        for (auto p : prerequisites) {
+            g[p.second].push_back(p.first);
+        }
+        return g;
+    }
+    
+    vector<int> computeIndegrees(graph& g) {
+        vector<int> degrees(g.size(), 0);
+        for (auto adj : g) {
+            for (int v : adj) {
+                degrees[v]++;
+            }
+        }
+        return degrees;
+    }
+};
+DFS
+
+For DFS, in each visit, we start from a node and keep visiting its neighbors, if at a time we return to a visited node, there is a cycle. Otherwise, start again from another unvisited node and repeat this process. We use todo and done for nodes to visit and visited nodes.
+
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<pair<int, int>>& prerequisites) {
+        graph g = buildGraph(numCourses, prerequisites);
+        vector<bool> todo(numCourses, false), done(numCourses, false);
+        for (int i = 0; i < numCourses; i++) {
+            if (!done[i] && !acyclic(g, todo, done, i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+private:
+    typedef vector<vector<int>> graph;
+    
+    graph buildGraph(int numCourses, vector<pair<int, int>>& prerequisites) {
+        graph g(numCourses);
+        for (auto p : prerequisites) {
+            g[p.second].push_back(p.first);
+        }
+        return g;
+    }
+    
+    bool acyclic(graph& g, vector<bool>& todo, vector<bool>& done, int node) {
+        if (todo[node]) {
+            return false;
+        }
+        if (done[node]) {
+            return true;
+        }
+        todo[node] = done[node] = true;
+        for (int v : g[node]) {
+            if (!acyclic(g, todo, done, v)) {
+                return false;
+            }
+        }
+        todo[node] = false;
+        return true;
+    }
+};
