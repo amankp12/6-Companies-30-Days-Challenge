@@ -1,0 +1,297 @@
+2467. Most Profitable Path in a Tree
+https://leetcode.com/problems/most-profitable-path-in-a-tree/
+
+Main Idea
+Alice can travel to any leaf from 0 but there is only one path for Bob. So we will find the path Bob will follow and update the contribution of each node in the path first.
+With the first dfs we will find the time to travel to each node 'u' from 0 and previous node of 'u' in the path.
+Now we can follow the path from Bob's node to 0 using the previous node we found earlier. In each node 'u' we will check if Alice will reach it first or Bob will. If Bob reaches it faster than Alice, we will make amount[u] = 0 and if both of them reaches at the same time we make amount[u] =amount[u]/2.
+
+Finally we will run our second dfs to find the cumulative sum of amount in the path to each leaf and return the maximum.
+
+Sample Code
+class Solution {
+public:
+    vector<vector<int>>adj;
+    vector<int>par,dis;
+	//Find the parent and distance from node 0
+    void dfs(int u,int p = 0,int d = 0){
+        dis[u] = d;
+        par[u] = p;
+        for(int v:adj[u]){
+            if(v==p)continue;
+            dfs(v,u,d+1);
+        }
+    }
+	// Find total sum to each node
+    int dfs2(int u,vector<int>&amount,int p= 0){
+        int ret = amount[u];
+        int mxc = -INT_MAX;
+        for(int v:adj[u]){
+            if(v!=p){
+                mxc= max(mxc,dfs2(v,amount,u));
+            }
+        }
+		//if the node is leaf we just return its amount
+        if(mxc==-INT_MAX)return ret;
+        else return ret+mxc;
+    }
+    int mostProfitablePath(vector<vector<int>>& edges, int bob, vector<int>& amount) {
+        int n = amount.size();
+        adj.resize(n,vector<int>());
+        for(auto&e:edges){
+            adj[e[0]].push_back(e[1]);
+            adj[e[1]].push_back(e[0]);
+        }
+        par.resize(n);
+        dis.resize(n);
+        dfs(0);
+        int cur = bob;
+        int bob_dis = 0;
+		//update the path of from Bob to 0
+        while(cur!=0){
+            if(dis[cur]>bob_dis){
+                amount[cur] = 0;
+            }else if(dis[cur]==bob_dis){
+                amount[cur]/=2;
+            }
+            cur = par[cur];
+            bob_dis++;
+        }
+        return dfs2(0,amount);
+    }
+    
+};
+Single DFS
+The idea was taken from this solution.
+The first dfs we ran earlier is only used to calculate the path and depth. We can merge this first dfs with the second one by taking additional vector that stores the distance from Bob's node.Then we can update the amount array and calculate path some at the same time.
+
+Sample Code
+
+class Solution {
+public:
+    vector<vector<int>>adj;
+    vector<int>disFromBob;
+    int bobNode;
+    int dfs(int u,int par,int depth,vector<int>&amount){
+        int ret = 0;
+        if(u==bobNode) disFromBob[u] = 0;
+        else disFromBob[u] = amount.size();
+        int maxChild = -INT_MAX;
+        for(int v:adj[u]){
+            if(v==par)continue;
+            maxChild = max(maxChild,dfs(v,u,depth+1,amount));
+            disFromBob[u] = min(disFromBob[u],disFromBob[v]+1);
+        }
+        if(disFromBob[u]>depth)ret+=amount[u];
+        else if(disFromBob[u]==depth)ret+=amount[u]/2;
+        if(maxChild==-INT_MAX) return ret;
+        else return ret+maxChild;
+    }
+    int mostProfitablePath(vector<vector<int>>& edges, int bob, vector<int>& amount) {
+        int n = amount.size();
+        bobNode = bob;
+        adj.resize(n,vector<int>());
+        for(auto&e:edges){
+            adj[e[0]].push_back(e[1]);
+            adj[e[1]].push_back(e[0]);
+        }
+        disFromBob.resize(n);
+        return dfs(0,0,0,amount);
+    }
+    
+};
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+2426. Number of Pairs Satisfying Inequality
+https://leetcode.com/problems/number-of-pairs-satisfying-inequality/
+
+Explanation ::
+Given that we have to find i , j such that 0 <= i < j <= n - 1 and
+nums1[i] - nums1[j] <= nums2[i] - nums2[j] + diff
+Step 1::
+Rewriting the inequality--
+(nums1[i] - nums2[i]) <= (nums1[j] - nums2[j]) + diff
+
+Step 2::
+Make a new array/vector c which stores nums1[i]-nums2[i].
+or c[i] = nums1[i]-nums2[i] for 0 <= i <= n - 1.
+
+Step 3::
+Problem reduces to find i , j such that 0 <= i < j <= n - 1 and
+c[i] <= c[j] + diff
+
+Now, This can be solved by using merge sort (Similar to inversion counting )
+
+class Solution 
+{
+public:
+
+    long long int count;
+   
+    void checkCount(vector<int>& nums, int start, int mid, int end,int d)
+    {
+
+        
+        int l = start, r = mid + 1;
+        while(l <= mid && r <= end)
+        {
+            if(nums[l]<=(nums[r]+d))  // if (nums[l]<=nums[r]+d) then all values from nums[r] to nums[end] will be be having their summation with d greater than or equal to nums[l]
+            {
+                count += (end - r+1);
+                l++;
+            }
+            else      // otherwise we need to increment r so that we can find match for nums[l]
+            {
+                r++;
+            }
+        }
+         // sort all values from start to end
+        sort(nums.begin() + start, nums.begin() + end + 1);  // (Sort using two-pointers for better time complexity)
+        return;
+         
+    }
+    void mergeSort(vector<int>& nums, int start, int end,int d)
+    {
+        if(start == end) 
+            return;
+        
+        int mid = (start + end)/2;
+        mergeSort(nums,start, mid,d);
+        mergeSort(nums,mid+1,end,d);
+        
+        checkCount(nums,start,mid,end,d);
+        return;
+        
+    }
+    long long numberOfPairs(vector<int>& a, vector<int>& b, int d) 
+    {
+        count = 0;
+        int n = a.size();
+        vector<int>c(n);  
+        
+        for(int i=0;i<n;i++)
+        c[i]=a[i]-b[i];               
+			
+        mergeSort(c,0,n-1,d);
+		
+        return count;
+    }
+};
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+581. Shortest Unsorted Continuous Subarray
+https://leetcode.com/problems/shortest-unsorted-continuous-subarray/
+class Solution {
+public:
+    int findUnsortedSubarray(vector<int>& nums) {
+        vector<int> sorted(nums);
+        sort(sorted.begin(), sorted.end());
+        int n = nums.size(), i = 0, j = n - 1;
+        while (i < n && nums[i] == sorted[i]) {
+            i++;
+        }
+        while (j > i && nums[j] == sorted[j]) {
+            j--;
+        }
+        return j + 1 - i;
+    }
+};
+max on left, min on right - O(N)
+The idea is that:
+
+From the left, for a number to stay untouched, there need to be no number less than it on the right hand side;
+From the right, for a number to stay untouched, there need to be no number greater than it on the left hand side;
+Those 2 can be easily checked if we build 2 vectors:
+
+max so far from the left,
+and min so far from the right;
+/**
+ *            /------------\
+ * nums:  [2, 6, 4, 8, 10, 9, 15]
+ * minr:   2  4  4  8   9  9  15
+ *         <--------------------
+ * maxl:   2  6  6  8  10 10  15
+ *         -------------------->
+ */
+class Solution {
+public:
+    int findUnsortedSubarray(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> maxlhs(n);   // max number from left to cur
+        vector<int> minrhs(n);   // min number from right to cur
+        for (int i = n - 1, minr = INT_MAX; i >= 0; i--) minrhs[i] = minr = min(minr, nums[i]);
+        for (int i = 0,     maxl = INT_MIN; i < n;  i++) maxlhs[i] = maxl = max(maxl, nums[i]);
+
+        int i = 0, j = n - 1;
+        while (i < n && nums[i] <= minrhs[i]) i++;
+        while (j > i && nums[j] >= maxlhs[j]) j--;
+
+        return j + 1 - i;
+    }
+};
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1976. Number of Ways to Arrive at Destination
+https://leetcode.com/problems/number-of-ways-to-arrive-at-destination/
+
+Idea
+
+We use Dijkstra algorithm to find the Shortest Path from src = 0 to dst = n - 1.
+While dijkstra, we create additional ways array, where ways[i] keeps the number of shortest path from src = 0 to dst = i. Then the answer is ways[n-1].
+
+Complexity
+
+Time: O(M * logN + N), where M <= N*(N-1)/2 is number of roads, N <= 200 is number of intersections.
+Space: O(N + M)
+
+Code
+#define ll long long
+#define pll pair<ll, ll>
+class Solution {
+public:
+    int MOD = 1e9 + 7;
+    int countPaths(int n, vector<vector<int>>& roads) {
+        vector<vector<pll>> graph(n);
+        for(auto& road: roads) {
+            ll u = road[0], v = road[1], time = road[2];
+            graph[u].push_back({v, time});
+            graph[v].push_back({u, time});
+        }
+        return dijkstra(graph, n, 0);
+    }
+    int dijkstra(const vector<vector<pll>>& graph, int n, int src) {
+        vector<ll> dist(n, LONG_MAX);
+        vector<ll> ways(n);
+        ways[src] = 1;
+        dist[src] = 0;
+        priority_queue<pll, vector<pll>, greater<>> minHeap;
+        minHeap.push({0, 0}); // dist, src
+        while (!minHeap.empty()) {
+            auto[d, u] = minHeap.top(); minHeap.pop();
+            if (d > dist[u]) continue; // Skip if `d` is not updated to latest version!
+            for(auto [v, time] : graph[u]) {
+                if (dist[v] > d + time) {
+                    dist[v] = d + time;
+                    ways[v] = ways[u];
+                    minHeap.push({dist[v], v});
+                } else if (dist[v] == d + time) {
+                    ways[v] = (ways[v] + ways[u]) % MOD;
+                }
+            }
+        }
+        return ways[n-1];
+    }
+};
