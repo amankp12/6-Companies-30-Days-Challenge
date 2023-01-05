@@ -1,0 +1,401 @@
+1358. Number of Substrings Containing All Three Characters
+https://leetcode.com/problems/number-of-substrings-containing-all-three-characters/description/
+
+Solution 1: Sliding Window
+Find many similar sliding window problem at the end of post.
+
+Time O(N)
+Space O(1)
+
+
+Java:
+
+    public int numberOfSubstrings(String s) {
+        int count[] = {0, 0, 0}, res = 0 , i = 0, n = s.length();
+        for (int j = 0; j < n; ++j) {
+            ++count[s.charAt(j) - 'a'];
+            while (count[0] > 0 && count[1] > 0 && count[2] > 0)
+                --count[s.charAt(i++) - 'a'];
+            res += i;
+        }
+        return res;
+    }
+C++:
+
+    int numberOfSubstrings(string s) {
+        int count[3] = {0, 0, 0},res = 0 , i = 0, n = s.length();
+        for (int j = 0; j < n; ++j) {
+            ++count[s[j] - 'a'];
+            while (count[0] && count[1] && count[2])
+                --count[s[i++] - 'a'];
+            res += i;
+        }
+        return res;
+    }
+Python:
+
+    def numberOfSubstrings(self, s):
+        res = i = 0
+        count = {c: 0 for c in 'abc'}
+        for j in xrange(len(s)):
+            count[s[j]] += 1
+            while all(count.values()):
+                count[s[i]] -= 1
+                i += 1
+            res += i
+        return res
+
+Solution II
+last will record the position of last occurrence.
+If the ending index of substring is i,
+the starting position should be on the left of min(last),
+in order to have all 3 different letters.
+And in this case, the starting index can be in range [0, min(last)],
+min(last) + 1 in total.
+
+Time O(N)
+Space O(1)
+
+
+Java
+
+    public int numberOfSubstrings(String s) {
+        int last[] = {-1, -1, -1}, res = 0, n = s.length();
+        for (int i = 0; i < n; ++i) {
+            last[s.charAt(i) - 'a'] = i;
+            res += 1 + Math.min(last[0], Math.min(last[1], last[2]));
+        }
+        return res;
+    }
+C++
+
+    int numberOfSubstrings(string s) {
+        int last[3] = {-1, -1, -1}, res = 0, n = s.length();
+        for (int i = 0; i < n; ++i) {
+            last[s[i] - 'a'] = i;
+            res += 1 + min({last[0], last[1], last[2]});
+        }
+        return res;
+    }
+Python
+
+    def numberOfSubstrings(self, s):
+        res, last = 0, [-1] * 3
+        for i, c in enumerate(s):
+            last[ord(c) - 97] = i
+            res += 1 + min(last)
+        return res
+        
+        
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+2344. Minimum Deletions to Make Array Divisible
+https://leetcode.com/problems/minimum-deletions-to-make-array-divisible/
+
+Explanation
+"divides all the elements of numsDivide"
+equals to
+"divides gcd of all the elements of numsDivide"
+where gcd is the greatest common divisor.
+
+So the first step, find out the gcd of numsDivide,
+then sort input nums A,
+and find out the smallest element A[i] in A divides gcd.
+
+We need to remove all elements smaller than A[i].
+If no such A[i], return -1
+
+
+Complexity
+Time O(nlogn + m + gcd), where gcd = log(max(numsDivide)
+Space O(1)
+
+
+Java
+
+    public int minOperations(int[] A, int[] numsDivide) {
+        int g = numsDivide[0], tmp;
+        for (int a : numsDivide) {
+            while (a > 0) { // g = gcd(g, a)
+                tmp = g % a;
+                g = a;
+                a = tmp;
+            }
+        }
+        Arrays.sort(A);
+        for (int i = 0; i < A.length && A[i] <= g; ++i)
+            if (g % A[i] == 0)
+                return i;
+        return -1;
+    }
+C++
+
+    int minOperations(vector<int>& A, vector<int>& numsDivide) {
+        int g = numsDivide[0];
+        for (int a: numsDivide)
+            g = gcd(g, a);
+        sort(A.begin(), A.end());
+        for (int i = 0; i < A.size() && A[i] <= g; ++i)
+            if (g % A[i] == 0)
+                return i;
+        return -1;
+    }
+Python
+
+    def minOperations(self, A: List[int], numsDivide: List[int]) -> int:
+        g = gcd(*numsDivide)
+        for i,a in enumerate(sorted(A)):
+            if g % a == 0: return i
+            if a > g: break
+        return -1
+Compressed version
+
+    def minOperations(self, A: List[int], numsDivide: List[int]) -> int:
+        g = gcd(*numsDivide)
+        return next((i for i,a in enumerate(sorted(A)) if g % a == 0), -1)
+
+Solution 2: Slight improvement
+Improve from O(nlogn) to O(n)
+
+Explanation from @k_r_h_ise:
+the optimisation is done by not sorting the nums array.
+Instead, we iterate it twice.
+
+first iteration：
+find the smallest element that divides the gcd_of_all(numsDivide).
+let's call it min_divisor.
+
+second iteration：
+count no. of elements that are smaller than the min_divisor.
+let's call it small_cnt.
+
+Now if small_cnt == size_of_num return -1 else return small_cnt
+
+Time O(n + m + gcd), where gcd = log(max(numsDivide)
+Space O(1)
+
+    def minOperations(self, A: List[int], numsDivide: List[int]) -> int:
+        g = gcd(*numsDivide)
+        small = min((a for a in A if g % a == 0), default = 0)
+        return sum(a < small for a in A) if small else -1
+        
+        
+        
+        
+        
+        
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+1227. Airplane Seat Assignment Probability
+https://leetcode.com/problems/airplane-seat-assignment-probability/
+
+Everyone is saying, it's obvious
+f(n) = 1 / n + (n - 2) / n * f(n - 1)
+
+What? Not to me at all.
+
+Here is my explanation,
+
+f(n) = 1/n                                    -> 1st person picks his own seat
+    + 1/n * 0                                 -> 1st person picks last one's seat
+	+ (n-2)/n * (                            ->1st person picks one of seat from 2nd to (n-1)th
+        1/(n-2) * f(n-1)                   -> 1st person pick 2nd's seat
+        1/(n-2) * f(n-2)                  -> 1st person pick 3rd's seat
+        ......
+        1/(n-2) * f(2)                     -> 1st person pick (n-1)th's seat
+	)
+	
+=> f(n) = 1/n * ( f(n-1) + f(n-2) + f(n-3) + ... + f(1) )
+
+Now, you can easily get
+f(1) = 1
+f(2) = 1/2
+f(3) = 1/2
+...
+A bit more explanation,
+If the 1st one picks i's seat, we know that
+
+Anyone between 1st and ith, gets their own seats
+Then, when we come to person i, it becomes a sub-problem
+
+i takes a random seat
+the rest follow the same rule
+from i to last (inclusive), there are n - (i-1) seats left
+so it's a f(n-i+1)
+Proof for why it's 1/2 when n > 2
+From the proof above we know that
+
+when n > 2,
+f(n) = 1/n * ( f(n-1) + f(n-2) + ... + f(1) )
+f(n-1) = 1/(n-1) * (f(n-2) + f(n-3) + ... + f(1))
+
+because, the 2nd equation requires n-1 > 1
+So that
+
+n * f(n) = f(n-1) + f(n-2) + f(n-3) + ... + f(1)
+(n-1) * f(n-1) = f(n-2) + f(n-3) + ... + f(1)
+Substract both sides, we get
+
+n * f(n) - (n-1)*f(n-1) = f(n-1)
+
+=> n * f(n) = n * f(n-1)
+=> f(n) = f(n-1) , when n > 2
+Then we know,
+f(1) =1
+f(2) = 1/2
+From here
+f(n) = f(n-1) = ... = f(2) = 1/2
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1392. Longest Happy Prefix
+https://leetcode.com/problems/longest-happy-prefix/
+
+Approach 1: Incremental Hash
+Compute hashes for increasing prefix and suffix, reusing the previously computed hashes. This is similar to the Karp–Rabin algorithm.
+
+For the string of i size, the hash is: s[0] * 26 ^ (i - 1) + s[1] * 26 ^ (i -2) + ... + s[i - 2] * 26 + s[i - 1].
+
+For the prefix hash, we will multiply the previous value by 26 and add a new letter.
+For the suffix hash, we add a new letter multiplied by 26 ^ (i - 1).
+Note that we need to use some large prime as a modulo to avoid overflow errors, e.g. 10 ^ 9 + 7.
+
+Beware of collisions. After you find a matching hash, you need to check the string. Since OJ test cases do not cause collisions, I am not doing it here.
+
+Update: see sample solutions that handle collisions in the appendices bellow.
+
+Example strings with collisions:
+
+"vwantmbocxcwrqtvgzuvgrmdltfiglltaxkjfajxthcppcatddcunpkqsgpnjjgqanrwabgrtwuqbrfl"
+"gqijndnbohkujykncuooajkhsxcbjbwhrrfgkliqatdndcrpmaqa"
+"tzqzalgnxstxzlul"
+C++
+
+string longestPrefix(string &s) {
+    long h1 = 0, h2 = 0, mul = 1, len = 0, mod = 1000000007;
+    for (int i = 0, j = s.length() - 1; j > 0; ++i, --j) {
+        int first = s[i] - 'a', last = s[j] - 'a';
+        h1 = (h1 * 26 + first) % mod;
+        h2 = (h2 + mul * last) % mod;
+        mul = mul * 26 % mod;
+        if (h1 == h2)
+            len = i + 1;
+    }
+    return s.substr(0, len);
+}
+Java
+
+public String longestPrefix(String s) {
+    long h1 = 0, h2 = 0, mul = 1, len = 0, mod = 1000000007;
+    for (int i = 0, j = s.length() - 1; j > 0; ++i, --j) {
+        int first = s.charAt(i) - 'a', last = s.charAt(j) - 'a';
+        h1 = (h1 * 26 + first) % mod;
+        h2 = (h2 + mul * last) % mod;
+        mul = mul * 26 % mod;
+        if (h1 == h2)
+            len = i + 1;
+    }
+    return s.substring(0, (int)len);        
+}
+Complexity Analysis
+
+Time: O(n)
+Memory: O(1)
+Approach 2: KMP
+What we are basically doing here is searching for the prefix [0, *] for each position i > 0, and check if the match is a suffix. A naive approach has O(n * n) time complexity, as we start matching the prefix from the beginning for every position i.
+
+We can adapt KMP algorithm, which has O(n + m) complexity. Two running pointers i and j are the current matching positions in suffix and prefix. The count of matched so far letters is tracked in dp. If there is a mismatch, we use dp to determine the new matching position for prefix (j). This allows the matching position for suffix (i) to never go back.
+
+The credit goes to dirkbe11 for this solution. The valuable insight there is that, in the end, the match position j (or the last value in dp) indicates the length of the matching prefix and suffix.
+
+There are lots of good description and videos of KMP online. Here, I just want to provide a picture example to demonstrate it.
+
+image
+
+C++
+
+string longestPrefix(string &s) {
+    vector<int> dp(s.size());
+    int j = 0;
+    for (int i = 1; i < s.size(); ++i) {
+        if (s[i] == s[j])
+            dp[i] = ++j;
+        else if (j > 0) {
+            j = dp[j - 1];
+            --i;
+        }
+    }
+    return s.substr(0, j);
+}
+Java
+
+public String longestPrefix(String s) {
+    int dp[] = new int[s.length()], j = 0;
+    for (int i = 1; i < s.length(); ++i) {
+        if (s.charAt(i) == s.charAt(j))
+            dp[i] = ++j;
+        else if (j > 0) {
+            j = dp[j - 1];
+            --i;
+        }
+    }
+    return s.substring(0, j);       
+}
+Complexity Analysis
+
+Time: O(n)
+Memory: O(n)
+Appendix A: Collision-Aware Incremental Hash
+This is little tricky to implement efficiently. If you check the string for every matching hash, it will be inefficient for repeated patterns. If you only store the largest size, like in the incremental hash solution above, what do you do if suffix and preffx of that size do not match?
+
+We can store all sizes where we have a potential match, but that would require extra memory. We can also try to compute the hash backwards, but you will need to compute the inverse modulo.
+
+Update: see the decremental hash solution in the following appendix.
+
+A simpler idea, which did not occur to me initially, is to compare the string every time you find a matching hash, but only do it for characters we haven't checked before. That way, we can handle repeating patterns efficiently.
+
+string longestPrefix(string &s) {
+    long h1 = 0, h2 = 0, mul = 1, len = 0, mod = 1000000007;
+    for (int i = 0, j = s.length() - 1; j > 0; ++i, --j) {
+        int first = s[i] - 'a', last = s[j] - 'a';
+        h1 = (h1 * 26 + first) % mod;
+        h2 = (h2 + mul * last) % mod;
+        mul = mul * 26 % mod;
+        if (h1 == h2) {
+            if (s.compare(0, i + 1 - len, s, j, s.size() - j - len) == 0 &&
+               s.compare(len, i + 1 - len, s, j + len, s.size() - j - len) == 0)
+                len = i + 1;
+        }
+    }
+    return s.substr(0, len);
+}
+Appendix B: Decremental Hash
+The problem with the incremental hash that we do not know if a larger happy prefix exists, and re-checking the string for collisions is expensive (O(n * n) for string with repeating pattern).
+
+What if we compute the hash for the entire string, and then decrement it for suffix and prefix? This way, the first match we find will correspond to the largest happy prefix.
+
+Beware: Inverse Modulo
+The formula to compute decremental hash is the reverse of the incremental hash. However, there is no division in the modular arithmetic; instead, we need to multiply by inverse modulo for that number with respect to the modulus (10 ^ 9 + 7 in our case).
+
+Inverse modulo for 26 with respect to 10 ^ 9 + 7 is 576923081. Search online for more information on inverse modulo and extended Euclidian algorithm to compute it.
+
+string longestPrefix(string &s) {
+    long h = 0, mod = 1000000007, mul = 1, inverseMod26 = 576923081;
+    for (int i = 0, j = s.length() - 1; j >= 0; ++i, --j) {
+        h = (h * 26 + s[i] - 'a') % mod;
+        mul = mul * 26 % mod;
+    }
+    long h1 = h, h2 = h;
+    for (int i = 0, j = s.length() - 1; j > 0; ++i, --j) {
+        mul = mul * inverseMod26 % mod;
+        h1 = (h1 - (s[j] - 'a')) * inverseMod26 % mod;
+        h2 = (mod + h2 - mul * (s[i] - 'a') % mod) % mod;
+        if (h1 == h2) {
+            if (s.compare(0, j, s, i + 1, s.size() - i - 1) == 0)
+                return s.substr(0, j);
+        }
+    }
+    return "";
+}
