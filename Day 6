@@ -2,7 +2,6 @@
 https://leetcode.com/problems/number-of-substrings-containing-all-three-characters/description/
 
 Solution 1: Sliding Window
-Find many similar sliding window problem at the end of post.
 
 Time O(N)
 Space O(1)
@@ -20,6 +19,7 @@ Java:
         }
         return res;
     }
+    
 C++:
 
     int numberOfSubstrings(string s) {
@@ -32,6 +32,7 @@ C++:
         }
         return res;
     }
+    
 Python:
 
     def numberOfSubstrings(self, s):
@@ -46,6 +47,7 @@ Python:
         return res
 
 Solution II
+
 last will record the position of last occurrence.
 If the ending index of substring is i,
 the starting position should be on the left of min(last),
@@ -67,6 +69,7 @@ Java
         }
         return res;
     }
+    
 C++
 
     int numberOfSubstrings(string s) {
@@ -77,6 +80,7 @@ C++
         }
         return res;
     }
+    
 Python
 
     def numberOfSubstrings(self, s):
@@ -86,7 +90,9 @@ Python
             res += 1 + min(last)
         return res
         
-        
+
+
+
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 2344. Minimum Deletions to Make Array Divisible
 https://leetcode.com/problems/minimum-deletions-to-make-array-divisible/
@@ -127,6 +133,7 @@ Java
                 return i;
         return -1;
     }
+    
 C++
 
     int minOperations(vector<int>& A, vector<int>& numsDivide) {
@@ -139,6 +146,7 @@ C++
                 return i;
         return -1;
     }
+    
 Python
 
     def minOperations(self, A: List[int], numsDivide: List[int]) -> int:
@@ -147,6 +155,7 @@ Python
             if g % a == 0: return i
             if a > g: break
         return -1
+	
 Compressed version
 
     def minOperations(self, A: List[int], numsDivide: List[int]) -> int:
@@ -154,9 +163,10 @@ Compressed version
         return next((i for i,a in enumerate(sorted(A)) if g % a == 0), -1)
 
 Solution 2: Slight improvement
+
 Improve from O(nlogn) to O(n)
 
-Explanation from @k_r_h_ise:
+Explanation
 the optimisation is done by not sorting the nums array.
 Instead, we iterate it twice.
 
@@ -189,16 +199,13 @@ https://leetcode.com/problems/airplane-seat-assignment-probability/
 
 Everyone is saying, it's obvious
 f(n) = 1 / n + (n - 2) / n * f(n - 1)
-
-What? Not to me at all.
-
 Here is my explanation,
 
-f(n) = 1/n                                    -> 1st person picks his own seat
-    + 1/n * 0                                 -> 1st person picks last one's seat
-	+ (n-2)/n * (                            ->1st person picks one of seat from 2nd to (n-1)th
+f(n) = 1/n                                 -> 1st person picks his own seat
+    + 1/n * 0                              -> 1st person picks last one's seat
+	+ (n-2)/n * (                      ->1st person picks one of seat from 2nd to (n-1)th
         1/(n-2) * f(n-1)                   -> 1st person pick 2nd's seat
-        1/(n-2) * f(n-2)                  -> 1st person pick 3rd's seat
+        1/(n-2) * f(n-2)                   -> 1st person pick 3rd's seat
         ......
         1/(n-2) * f(2)                     -> 1st person pick (n-1)th's seat
 	)
@@ -271,6 +278,7 @@ Example strings with collisions:
 "vwantmbocxcwrqtvgzuvgrmdltfiglltaxkjfajxthcppcatddcunpkqsgpnjjgqanrwabgrtwuqbrfl"
 "gqijndnbohkujykncuooajkhsxcbjbwhrrfgkliqatdndcrpmaqa"
 "tzqzalgnxstxzlul"
+
 C++
 
 string longestPrefix(string &s) {
@@ -285,6 +293,7 @@ string longestPrefix(string &s) {
     }
     return s.substr(0, len);
 }
+
 Java
 
 public String longestPrefix(String s) {
@@ -300,9 +309,9 @@ public String longestPrefix(String s) {
     return s.substring(0, (int)len);        
 }
 Complexity Analysis
-
 Time: O(n)
 Memory: O(1)
+
 Approach 2: KMP
 What we are basically doing here is searching for the prefix [0, *] for each position i > 0, and check if the match is a suffix. A naive approach has O(n * n) time complexity, as we start matching the prefix from the beginning for every position i.
 
@@ -329,6 +338,7 @@ string longestPrefix(string &s) {
     }
     return s.substr(0, j);
 }
+
 Java
 
 public String longestPrefix(String s) {
