@@ -1,0 +1,169 @@
+2179. Count Good Triplets in an Array
+https://leetcode.com/problems/count-good-triplets-in-an-array/
+
+We first use two arrays to get a single array with indexes:
+
+A number in the first array is replaced with an index of that number in the second one.
+Then, we compute good triplets in that array, such as i < j < k and nums1[i] < nums1[j] < nums1[k].
+
+For that, we go through each middle element, and count smaller elements on the left, and greater on the right. That middle element can form smaller * greater good triplets.
+
+We can use BIT (AKA Fenwick Tree) to count elements smaller (sm) than the middle element in O(n log n). Because we have n - 1 unique numbers, figuring out greater (gr) elements on the right is easy.
+
+Code
+
+constexpr int static n = 100000;
+int bt[n + 1] = {};
+int prefix_sum(int i) {
+    int sum = 0;
+    for (i = i + 1; i > 0; i -= i & (-i))
+        sum += bt[i];
+    return sum;
+}
+void add(int i, int val) {
+    for (i = i + 1; i <= n; i += i & (-i))
+        bt[i] += val;
+}
+long long goodTriplets(vector<int>& nums1, vector<int>& nums2) {
+    long long res = 0, sz = nums1.size();
+    vector<int> ids(sz);
+    for (int i = 0; i < sz; ++i)
+        ids[nums2[i]] = i;
+    for (int i = 0; i < sz - 1; ++i) {
+        int mid = ids[nums1[i]], sm = prefix_sum(mid), gr = sz - 1 - mid - (i - sm);
+        res += (long long)sm * gr;
+        add(mid, 1);
+    }
+    return res;
+}
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2212. Maximum Points in an Archery Competition
+https://leetcode.com/problems/maximum-points-in-an-archery-competition/
+
+Solution 1: Top down DP with Backtrack
+
+Step 1: We can DP to find the maximum score Bob can get.
+Let dp(k, numArrows) is the maximum score Bob can get if we compute sections from [k...11] and numArrows arrows.
+We choose the maximum score between 2 following cases:
+If Bob LOSE then dp[k][numArrows] = dp[k+1][numArrows]. It means no score earn, we use no arrows.
+If Bob WIN only if numArrows is greater than aliceArrows[k] then dp[k][numArrows] = dp[k+1][numArrows-aliceArrows[k]-1] + k. It means we earn k score and use aliceArrows[k] + 1 arrows.
+Step 2: Backtracking to see in section k, Bob win or lose.
+
+
+Code
+class Solution {
+public:
+    int memo[12][100001];
+    int dp(int k, int numArrows, vector<int>& aliceArrows) {
+        if (k == 12 || numArrows <= 0)
+            return 0;
+        
+        if (memo[k][numArrows] != -1) return memo[k][numArrows];
+        int maxScore = dp(k+1, numArrows, aliceArrows); // Bob loses
+        if (numArrows > aliceArrows[k])
+            maxScore = max(maxScore, dp(k+1, numArrows-aliceArrows[k]-1, aliceArrows) + k); // Bob wins
+        return memo[k][numArrows] = maxScore;
+    }
+    
+    vector<int> maximumBobPoints(int numArrows, vector<int>& aliceArrows) {
+        memset(memo, -1, sizeof(memo));
+        vector<int> ans(12, 0);
+        int remainBobArrows = numArrows;
+        for (int k = 0; k < 12; ++k) {
+            if (dp(k, numArrows, aliceArrows) != dp(k+1, numArrows, aliceArrows)) { // if Bob wins
+                ans[k] = aliceArrows[k] + 1;
+                numArrows -= ans[k];
+                remainBobArrows -= ans[k];
+            }
+        }
+        
+        // In case of having remain arrows then it means in all sections Bob always win 
+        //   then we can distribute the remain to any section, here we simple choose first section.
+        ans[0] += remainBobArrows;
+        return ans;
+    }
+};
+
+Complexity
+
+Time: O(2 * 12 * numArrows), where numArrows <= 10^5.
+Space: O(12 * numArrows)
+Explain: There are total 12 * numArrows states, each state need at most 2 case (Lose or Win) to compute.
+
+Solution 2: Backtracking
+
+For each section [0..11], we have 2 choices: Bob wins or loses, so there are up to 2^12 options.
+Therefore we can do normal backtracking to check all possible options, and update the best option if we found.
+
+Complexity
+
+Time: O(2 ^ 12) in avg. But in the worst case it always update the bestScore, so it does copy the whole bobArrows, so it takes O(12 * 2^12) in time complexity.
+Space: O(1)
+
+Solution 3: Bit Masking
+
+Instead of using backtracking, we can generate all possible options by using bit masking.
+Let mask represent the option, Bob wins in section k only if k_th bit of mask is 1.
+
+Complexity
+
+Time: O(12 * 2 ^ 12)
+Space: O(1)
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+502. IPO
+https://leetcode.com/problems/ipo/
+
+What?
+The question wants us to find the maximum capital we can make by doing at most k projects. Since each project has a profit >= 0, therefore we will choose exact k projects because each project will contribute something to our answer. Greedy appraoch would be a better choice here.
+
+Why Greedy?
+The first thing that stops us from using DP is constraints. The things that we would need to memoize are
+1 <= k <= 105
+0 <= w <= 109
+1 <= n <= 105
+And these are not feasible constraints to be stored. At max, we can solve upto 106. And here, since we will need to store three of them, we would not be able to.
+Then we can see, that in this question, if we just keep on adding the maximum profit we can get from every possible project, we will ultimately have the maximum profit that we can gain. We can note that using priority queue here, would enusre that we choose the most profitable project possible from current w. Priority queue stores the data in decreasing order, so it may be possible that we choose a project, lets say j which has the profit greater that a project, lets say i, such that i<j. But this will not affect our final answer as we have to return the maximum profit. (A+B == B+A, so order doesn't really matter here).
+
+How?
+So, we store the capital of each project with its respective profit into another array of pairs, and sort it based on capitals. This way, we will have the lower capital projects first so that we have something to start from. Now, we make a max heap and while our current capital supports us to choose some projexts, we iterate over all of those projects(that we can choose from with current capital) and keep pushing them in our heap. Next, when we are finished iterating over them, we pick the projext having the maximum profit, we choose that project and add its profit to our current capital.
+
+class Solution {
+public:
+    int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
+        vector <pair <int,int>> arr;
+        for(int i = 0; i<profits.size(); i++) arr.push_back({capital[i],profits[i]});
+        sort(arr.begin(),arr.end());
+        
+        priority_queue <int> q;
+        int ans = 0, i=0;
+        while(i<arr.size() and k){
+            if(w>=arr[i].first) q.push(arr[i++].second);
+            else{
+				// This condition will check if we had enough capital to choose any project or not. If not, we directly return the current capital.
+                if(q.empty()) return w;
+                
+                w += q.top();
+                q.pop();
+                k--;
+            }
+        }
+		// Here, we check if we could still choose some projects
+        while(k-- and !q.empty()){
+            w += q.top();
+            q.pop();
+        }
+        return w;
+    }
+};
