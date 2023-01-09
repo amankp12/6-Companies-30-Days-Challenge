@@ -1,0 +1,255 @@
+2327. Number of People Aware of a Secret
+https://leetcode.com/problems/number-of-people-aware-of-a-secret/
+
+Intuition
+
+Sliding window, calculatint the number of people who will share the secrets.
+
+
+Explanation
+
+dp[i] means the number of people who found the secret on ith day.
+share is the number of people who are going to share the secrets.
+On the ith day,
+dp[i - delay] people found the secret delay days before,
+starting to share the secret.
+so share += dp[i - delay]
+
+dp[i - forget] people found the secret forget days before,
+and forgot the secret today.
+so share -= dp[i - forget]
+and we assign dp[i] = share.
+
+
+Complexity
+
+Time O(n)
+Space O(n)
+
+
+    
+C++
+
+    int peopleAwareOfSecret(int n, int delay, int forget) {
+        vector<long> dp(n + 1);
+        dp[1] = 1;
+        int share = 0, mod = 1e9 + 7, res = 0 ;
+        for (int i = 2; i <= n; ++i)
+            dp[i] = share = (share + dp[max(i - delay, 0)] - dp[max(i - forget, 0)] + mod) % mod;
+        for (int i = n - forget + 1; i <= n; ++i)
+            res = (res + dp[i]) % mod;
+        return res;
+    }
+    
+
+
+Solution2
+
+Time O(n)
+Space O(forget)
+
+C++
+
+    int peopleAwareOfSecret(int n, int delay, int forget) {
+        vector<long> dp(forget);
+        dp[0] = 1;
+        long mod = 1e9 + 7, share = 0;
+        for (int i = 1; i < n; ++i)
+            dp[i % forget] = share = (share + dp[(i - delay + forget) % forget] - dp[i % forget] + mod) % mod;
+        return accumulate(dp.begin(), dp.end(), 0L) % mod;
+    }
+    
+    
+    
+    
+    
+    
+    --------------------------------------------------------------------------------------------------------------------------------------------------------------
+1169. Invalid Transactions
+https://leetcode.com/problems/invalid-transactions/
+
+Explanation:
+It’s a Garbage question. Lots of ambiguity.
+Brute force always works. That doesn't mean it's the best way.
+This is definitely different from most LC questions in that it is more practical, and a bit frustrating, than the more typical ivory-tower problems. It's actually much closer to what I do daily at work than any other LC I have done.
+It’s more cp type question than actual Leetcode problems.
+
+Code:
+
+class transaction {
+public:
+    int time;
+    int amount;
+    string city;
+    string tran;
+    bool marked;
+    
+    transaction (int t, int a, string c, string tr) {
+        tran = tr;
+        time = t;
+        amount = a;
+        city = c;
+        marked = false;
+    }
+};
+class Solution {
+public:
+    vector<string> invalidTransactions(vector<string>& transactions) {
+        if(transactions.empty())
+            return {};
+        
+        unordered_map<string, vector<transaction*>> trans;
+        
+        for(string &st : transactions) {
+            istringstream ss(st);
+            string token = "";
+           
+            getline(ss, token, ',');
+            string name = token;
+            getline(ss, token, ',');
+            int time = stoi(token);
+            getline(ss, token, ',');
+            int amount = stoi(token);
+            getline(ss, token, ',');
+            string city = token;
+            
+            transaction *t = new transaction(time, amount, city, st);
+            trans[name].push_back(t);
+        }
+        vector<string> result;
+        
+        for(auto &p : trans) {
+           
+            sort(p.second.begin(), p.second.end(), [](const transaction* a, const transaction* b) {
+                return a->time < b->time;
+            });
+            for(int i=0; i<p.second.size(); i++) {
+                
+                if(p.second[i]->amount > 1000) {
+                    result.push_back(p.second[i]->tran);
+                    p.second[i]->marked = true;
+                }
+               
+                if(i > 0 && p.second[i]->time <= p.second[i-1]->time + 60) {
+                    int r = i-1;
+                    while(r >= 0 && p.second[r]->time >= p.second[i]->time - 60) {
+                        if(p.second[i]->city != p.second[r]->city) {
+                            if(!p.second[r]->marked) {
+                                result.push_back(p.second[r]->tran);
+                                p.second[r]->marked = true;
+                            }
+                            if(!p.second[i]->marked) {
+                                p.second[i]->marked = true;
+                                result.push_back(p.second[i]->tran);
+                            }
+                        }
+                        r--;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+};
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1305. All Elements in Two Binary Search Trees
+https://leetcode.com/problems/all-elements-in-two-binary-search-trees/
+
+We are doing in-order traversal independently for two trees. When it's time to 'visit' a node on the top of the stack, we are visiting the smallest of two.
+
+Nodes are visited in the ascending order during the in-order traversal.
+
+Code
+
+void pushLeft(stack<TreeNode*> &s, TreeNode* n) {
+    while (n != nullptr) 
+        s.push(exchange(n, n->left));
+}
+vector<int> getAllElements(TreeNode* root1, TreeNode* root2) {
+    vector<int> res;
+    stack<TreeNode*> s1, s2;
+    pushLeft(s1, root1);
+    pushLeft(s2, root2);
+    while (!s1.empty() || !s2.empty()) {
+        stack<TreeNode*> &s = s1.empty() ? s2 : s2.empty() ? s1 : 
+            s1.top()->val < s2.top()->val ? s1 : s2;
+        auto n = s.top(); s.pop();
+        res.push_back(n->val);
+        pushLeft(s, n->right);
+    }
+    return res;
+}
+
+Complexity Analysis
+
+Time: O(n), where n is the total number of nodes in both trees.
+Memory: O(n) for the stack - in the worst case, we may need to store the entire tree there.
+
+Generic Solution
+
+A generic version of this problem would be to combine elements from K binary search trees.
+
+class BSTIterator {
+  stack<TreeNode*> s;
+  void pushLeft(TreeNode* n) {
+    while (n != nullptr) s.push(exchange(n, n->left));
+  }
+public:
+  BSTIterator(TreeNode* root) { pushLeft(root); }
+  bool hasNext() const { return !s.empty(); }
+  int next() {
+    auto n = s.top(); s.pop();
+    pushLeft(n->right);
+    return n->val;
+  }
+};
+class PeekingIterator : public BSTIterator {
+  bool peeked = false;
+  int last_val = 0;
+public:
+  PeekingIterator(TreeNode* root) : BSTIterator(root) { }
+  int peek() {
+    if (peeked) return last_val;
+    peeked = true;
+    return last_val = BSTIterator::next();
+  }
+  int next() {
+    if (peeked) {
+      peeked = false;
+      return last_val;
+    }
+    return BSTIterator::next();
+  }
+  bool hasNext() const {
+    return peeked || BSTIterator::hasNext();
+  }
+};
+vector<int> mergeKTrees(vector<TreeNode*> trees) {
+  vector<int> res;
+  priority_queue <pair<int, PeekingIterator*>,
+    vector<pair<int, PeekingIterator*>>, greater<pair<int, PeekingIterator*>> > q;
+  for (auto t : trees) {
+    auto it = new PeekingIterator(t);
+    if (it->hasNext()) q.push({ it->peek(), it });
+  }
+  while (!q.empty()) {
+    auto p = q.top(); q.pop();
+    res.push_back(p.second->next());
+    if (p.second->hasNext())
+      q.push({ p.second->peek(), p.second });
+  }
+  return res;
+}
+vector<int> getAllElements(TreeNode* root1, TreeNode* root2) {
+  return mergeKTrees({ root1, root2 });
+}
+
+Complexity Analysis
+
+Time: O(n log k), where n is the total number of nodes in all trees, and k is the number of trees.
+Memory: O(n + k) for the stack and priority queue.
