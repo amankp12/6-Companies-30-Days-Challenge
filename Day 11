@@ -1,0 +1,153 @@
+1878. Get Biggest Three Rhombus Sums in a Grid
+https://leetcode.com/problems/get-biggest-three-rhombus-sums-in-a-grid/
+
+I was thinking that we need some clever implementation here, but I did not see it. Therefore I went with a brute-force, and tested it agains 100 x 100 grid.
+
+It looks like the actual OJ constraint is 50 x 50. And, brute-force was like 16 ms on that grid:
+
+expected 'grid' to have 1 <= size <= 50 but got 100
+
+I think that the complexity of this problem is in handling rhombi corectly?
+
+We can improve the runtime here by computing each rhombus sum in O(1). For that, we will need to compute prefix sums for each \ and / diagonals.This feels tedious and straightforward, so I'll pass.
+
+vector<int> getBiggestThree(vector<vector<int>>& g) {
+    set<int> s;
+    for (int i = 0; i < g.size(); ++i)
+        for (int j = 0; j < g[0].size(); ++j)
+            for (int sz = 0; i + sz < g.size() && i - sz >= 0 && j + 2 * sz < g[0].size(); ++sz) {
+                int x = i, y = j, r_sum = 0;
+                do r_sum += g[x++][y++]; while (x < i + sz);
+                if (sz > 0) {
+                    do r_sum += g[x--][y++]; while (y < j + 2 * sz);
+                    do r_sum += g[x--][y--]; while (x > i - sz);
+                    do r_sum += g[x++][y--]; while (x < i);
+                }
+                s.insert(r_sum);
+                if (s.size() > 3)
+                    s.erase(begin(s));                
+            }
+    return vector<int>(rbegin(s), rend(s));
+}
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+1814. Count Nice Pairs in an Array
+https://leetcode.com/problems/count-nice-pairs-in-an-array/
+
+Solution (using HashMap)
+
+We are asked to find pair (i, j) such that i < j and num[i] + rev(num[j]) = num[j] + rev(num[i]). Obviously looking for each pair (i, j) won't work. So, we need to find a better time complexity than O(n^2)
+
+The above equation can be modified as -
+
+num[i] - rev(num[i]) = num[j] - rev(num[j])
+We can see that we are required to find number of pairs whose difference between original number and reversed number is the same. So, we can just count the frequency of numbers having a particular n - rev(n) value and store them in a hashmap. Finally, we just have to count the pairs which can be formed which is freq[i] * (freq[i] - 1) / 2.
+
+C++
+
+int countNicePairs(vector<int>& nums) {
+	long count = 0;
+	unordered_map<int, long> mp;
+	for(auto& num : nums) mp[num - rev(num)]++;        // counting frequency of each n - rev(n)
+	for(auto& pair : mp)  // with each value, we can form n*(n-1)/2 pairs
+		count = (count + (pair.second * (pair.second - 1)) / 2) % 1000000007; 
+	/* Infact, the above can be done in a single pass as well which I didn't realise at the first try -
+	for(auto& num : nums) count = (count + mp[num - reverseNum(num)]++) % 1000000007;
+	*/
+	return count;
+}
+int rev(int n){
+	int revNum = 0;
+	while(n) revNum = revNum * 10 + (n % 10), n /= 10;
+	return revNum;
+}
+
+Time Complexity : O(N*log10(L)), where N is the number of elements in array and L is average length of each element (0 <= L <= 9).
+Space Complexity : O(N)
+
+Fun Fact : All the numbers have the difference between the original number and its reverse as a multiple of 9.
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2151. Maximum Good People Based on Statements
+https://leetcode.com/problems/maximum-good-people-based-on-statements/
+
+We need to find maximum number of people who can be good in accordance with the given statements.
+
+Solution - I (DFS + Backtrack)
+
+A person can either be good or bad.
+However, we cant be sure & assigning a person as good cant lead to contradictions in statements
+We explore both possibilities of a person being good or bad
+Finally, we check if current configuration is valid or not
+
+C++
+
+class Solution {
+public:
+    int n, ans = 0;
+    int maximumGood(vector<vector<int>>& S) {
+        n = size(S);
+        string cur = ""; cur.reserve(n);
+        dfs(S, cur, 0, 0);
+        return ans;
+    }
+    void dfs(vector<vector<int>>& S, string& cur, int i, int cnt) {
+        if(i == n) {
+			// if valid, update ans to store maximum good person found till now
+            if(valid(S, cur)) ans = max(ans, cnt);
+            return;
+        }
+        cur.append(1, '0');
+        dfs(S, cur, i+1, cnt);        // assuming ith person is bad
+        cur.back() = '1';
+        dfs(S, cur, i+1, cnt + 1);    // assuming ith person is good
+        cur.pop_back();        
+    }
+    bool valid(vector<vector<int>>& S, string& cur) {
+        for(int i = 0; i < n; i++) 
+            if(cur[i] == '1') 
+                for(int j = 0; j < n; j++) 
+                    if(S[i][j] != 2 && S[i][j] != cur[j] - '0') return false;
+        return true;
+    }
+};
+       
+Time Complexity : O(N2*2N), where N is the number of people
+Space Complexity : O(N)
+
+Solution - II (Bitmasking)
+
+The same thing as above, but using bitmasking which should be more efficient than backtracking. We are basically exploring all possible configurations for given n people.
+
+C++
+
+class Solution {
+public:
+    int maximumGood(vector<vector<int>>& S) {
+        int n = size(S), ans = 0;
+        auto valid = [&](int cur) {
+            for(int i = 0; i < n; i++)
+                if(cur & 1 << n-1-i)
+                    for(int j = 0; j < n; j++)
+                        if(S[i][j] != 2 && S[i][j] != bool(cur & 1 << n-1-j)) return false;
+            return true;
+        };
+        for(int i = 0; i < 1 << n; i++)                            // bits in i denotes person configuration
+            if(valid(i)) ans = max(ans, __builtin_popcount(i));    // update ans if valid config
+        return ans;
+    }
+};
+
+Time Complexity : O(N2*2N), where N is the number of people
+Space Complexity : O(1)
