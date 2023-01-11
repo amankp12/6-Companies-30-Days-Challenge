@@ -1,0 +1,198 @@
+166. Fraction to Recurring Decimal
+https://leetcode.com/problems/fraction-to-recurring-decimal/
+
+For the decimal part to recur, the remainder should recur. So we maintain the remainders we have seen. Once we see an existing remainder, we have reached the end of the recurring part (enclose it with a )). Moreover, insert the ( to the starting index of the recurring part by maintaining a mapping from each remainder to the index of the corresponding digit and using it to retrieve the starting index.
+
+For those without fractional parts or with non-recursive fractional points, we may find them out by % or zero remainder. Some other problems that need to be considered include the sign and overflow (-2147483648 / -1).
+
+class Solution {
+public:
+    string fractionToDecimal(int numerator, int denominator) {
+        if (!numerator) {
+            return "0";
+        }
+        string ans;
+        if (numerator > 0 ^ denominator > 0) {
+            ans += '-';
+        }
+        long n = labs(numerator), d = labs(denominator), r = n % d;
+        ans += to_string(n / d);
+        if (!r) {
+            return ans;
+        }
+        ans += '.';
+        unordered_map<long, int> rs;
+        while (r) {
+            if (rs.find(r) != rs.end()) {
+                ans.insert(rs[r], "(");
+                ans += ')';
+                break;
+            }
+            rs[r] = ans.size();
+            r *= 10;
+            ans += to_string(r / d);
+            r %= d;
+        }
+        return ans;
+    }
+};
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+334. Increasing Triplet Subsequence
+https://leetcode.com/problems/increasing-triplet-subsequence/
+
+I initially solved this problem by "thinking hard", so I came up with a convoluted solution (though greatly simplified when coding): https://leetcode.com/discuss/105584/space-time-elegant-short-clean-solution-detailed-explanation
+
+Today, I revisited this problem. This time, I don't think about how to solve it, instead I want to think about "how to think about it".
+
+Ok, so I read the description again, then I realize, it is asking about some sort of "increasing subsequence" with size 3.
+
+Then I think about all the relevant algorithm I know, for example, the famous "Longest Increasing Subsequence" (LIS) problem.
+
+Then I instantly got a solution: Find the LIS of the input, and if it is greater than 3, return true;
+Looks like a working solution, what's its complexity then:
+
+There is a O(nlogk) solution to LIS (if you don't know it, just search this problem in Leetcode and see the discussions), where n is the array length and k is the length of LIS. Here, k is no larger than 2, so it is O(nlog2) = O(n). Very well, a O(n) solution is so easily obtained here:
+
+class Solution {
+public:
+    bool increasingTriplet(vector<int>& nums) {
+        vector<int> dp;
+        for (auto n : nums)
+        {
+            auto iter = lower_bound(begin(dp), end(dp), n);
+            if (iter == end(dp))
+            {
+                dp.push_back(n);
+                if (dp.size() == 3)
+                    return true;
+                continue;
+            }
+            if (*iter > n)
+                *iter = n;
+        }
+        return false;
+    }
+};
+The only difference between LIS and this problem is the check "if (dp.size() == 3)"; For comparison, this is the code to return the LIS of the input nums: You can copy-paste it to the LIS problem and pass it actually.
+
+vector<int> dp;
+for (auto n : nums)
+{
+    auto iter = lower_bound(begin(dp), end(dp), n);
+    if (iter == end(dp))
+    {
+        dp.push_back(n);
+        continue;
+    }
+    if (*iter > n)
+        *iter = n;
+}
+return dp.size();
+Apparently, as you may have already noticed, the "dp" here contains at most 2 elements, so one instant simplification here is to replace "lower_bound" call to a simple "if comparison else comparison". Then a much more simplified version is obtained:
+
+class Solution {
+public:
+    bool increasingTriplet(vector<int>& nums) {
+        int a = INT_MAX, b = INT_MAX;
+        for (auto n : nums)
+            if (n <= a)
+                a = n;
+            else if (n <= b)
+                b = n;
+            else
+                return true;
+        return false;
+    }
+};
+You may have seen 100 ways to explain why this "if .. else" works in other discussions. Here, it is so easy to understand: it is just a simple version of Binary Search for 2 elements -- the replacement of lower_bound in above solution.
+
+Following this think flow, I managed to come up with this elegant solution without any "hard thinking".
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+440. K-th Smallest in Lexicographical Order
+https://leetcode.com/problems/k-th-smallest-in-lexicographical-order/
+
+Runtime: 0 ms, faster than 100.00% of C++ online submissions for K-th Smallest in Lexicographical Order.
+Memory Usage: 6.1 MB, less than 28.46% of C++ online submissions for K-th Smallest in Lexicographical Order.
+
+This solution is taken from the post of "NotModified", for my own purpose details explanations are added.
+
+We have to find the Kth smallest number  in Lexicographical Order, we can use Trie DS and iterate over it
+as numbers are lexicographically sorted in Trie but limit is 10^9 too high here and so it will give TLE.
+
+In lexicographically sorted array lower MSB digit prefix numbers always comes first and so we can count
+the number of numbers with lower prefix and if count is less than K, then Kth number will contain in the
+numbers with lower prefix MSB digit range (1 to N) otherwise it will be in the next higher prefix number
+with same digit range. This way we can count numbers with prefix "1" and check with K, if K<= count then
+MSB prefix is "1" and then we go to next digit MSB prefix "10" otherwise we check for MSB digit "2" and so on. 
+When K <= count we decrease K by 1 cause we already have the prefix number in which Kth value falls
+and so we can ignore it. If K > count we go to MSB digit next prefix and so we can ignore previous prefix
+count from K. When K ==0 we will get our prefix value as result.
+From lexicographically sorted numbers 1 to 13 =>  [1, 10, 11, 12, 13, 2, 3, 4, 5, 6, 7, 8, 9]
+we see that first 5 numbers have prefix "1" and then the other numbers have their own sequential values.
+
+Here if K = 3 then result = 11
+
+First number count with prefix "1" in range 1 to 13 is 5 and K =3 means Kth number must start with 
+prefix "1". Now we got the first digit of our result number which is "1". We have to find the next digit
+and we will take the next digit prefix of "1" which is "10". As we already know that 1 is the MSB digit of
+result we can ignore it from count K and so we decrement K and now K = 2. Number count with prefix "10"
+in range 10 to 13 is 1 and K = 2 and so Kth number can not contain prefix "10" and we ignore those number
+count of "10" from K and K becomes 1. Now same digit next prefix of "10" is "11" and number count of 
+prefix "11" in range of 11 to 13 is 1 and as K =1, the Kth number must start with prefix "11" and we ignore
+the prefix "11" from K and K becomes 0 and the prefix is the result.
+
+class Solution {
+public:
+    
+    // count the numbers which are in range 1 to N with prefix 
+    int countPrefix(int n, long long prefix)
+    {
+        long long offset = 10;
+        long long target = n;
+        int total = 0;
+        for(int i=1;i<=9;i++)
+        {
+            long long minv = prefix * offset;
+            long long maxv = minv + offset-1;
+            
+            
+            if(target < minv)break;
+            
+            total+= min(target,maxv) - minv + 1;
+            
+            offset = offset * 10;
+        }
+        
+        return total+1;
+    }
+    
+    int findKthNumber(int n, int k, int prefix =0) {
+
+        // if K > 0 we have to find the result otherwise current prefix is the solution
+        if(k>0)
+        {
+            // go through next prefix from current prefix and check count of numbers with ith prefix
+            // if K <= prefix_count then K lies in the current prefix range and so we ignore current prefix
+            // and go to next digit prefix from current prefix and decrease K by 1 
+            // otherwise we check prefix count for same digit next prefix number and ignore the previous
+            // prefix count from K as K is out of the range of previous prefix number
+            for(int i= (prefix==0)?1:0;i<=9;i++)
+            {
+                int prefixCount = countPrefix(n,10*prefix+i);
+                if(k<=prefixCount) return findKthNumber(n,k-1,10*prefix+i);
+                k-=prefixCount;
+            }            
+        }
+        return prefix;
+    }
