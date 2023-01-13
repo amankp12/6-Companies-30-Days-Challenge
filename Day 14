@@ -1,0 +1,188 @@
+792. Number of Matching Subsequences
+https://leetcode.com/problems/number-of-matching-subsequences/
+
+Runtime is linear in the total size of the input (S and all of words).
+Explanation below the code.
+
+Solutions:
+Variations of the same algorithm described at the end.
+
+C++:
+Using char pointers to keep track of the waiting suffixes (thanks to @mzchen for help, see our conversation for more):
+
+int numMatchingSubseq(string S, vector<string>& words) {
+    vector<const char*> waiting[128];
+    for (auto &w : words)
+        waiting[w[0]].push_back(w.c_str());
+    for (char c : S) {
+        auto advance = waiting[c];
+        waiting[c].clear();
+        for (auto it : advance)
+            waiting[*++it].push_back(it);
+    }
+    return waiting[0].size();
+}
+Using index pairs (i,j) meaning word i is waiting for its letter j:
+
+int numMatchingSubseq(string S, vector<string>& words) {
+    vector<pair<int, int>> waiting[128];
+    for (int i = 0; i < words.size(); i++)
+        waiting[words[i][0]].emplace_back(i, 1);
+    for (char c : S) {
+        auto advance = waiting[c];
+        waiting[c].clear();
+        for (auto it : advance)
+            waiting[words[it.first][it.second++]].push_back(it);
+    }
+    return waiting[0].size();
+}
+
+Explanation:
+I go through S once, and while I'm doing that, I move through all words accordingly. That is, I keep track of how much of each word I've already seen, and with each letter of S, I advance the words waiting for that letter. To quickly find the words waiting for a certain letter, I store each word (and its progress) in a list of words waiting for that letter. Then for each of the lucky words whose current letter just occurred in S, I update their progress and store them in the list for their next letter.
+
+Let's go through the given example:
+
+S = "abcde"
+words = ["a", "bb", "acd", "ace"]
+I store that "a", "acd" and "ace" are waiting for an 'a' and "bb" is waiting for a 'b' (using parentheses to show how far I am in each word):
+
+'a':  ["(a)", "(a)cd", "(a)ce"]
+'b':  ["(b)b"]
+Then I go through S. First I see 'a', so I take the list of words waiting for 'a' and store them as waiting under their next letter:
+
+'b':  ["(b)b"]
+'c':  ["a(c)d", "a(c)e"]
+None: ["a"]
+You see "a" is already waiting for nothing anymore, while "acd" and "ace" are now waiting for 'c'. Next I see 'b' and update accordingly:
+
+'b':  ["b(b)"]
+'c':  ["a(c)d", "a(c)e"]
+None: ["a"]
+Then 'c':
+
+'b':  ["b(b)"]
+'d':  ["ac(d)"]
+'e':  ["ac(e)"]
+None: ["a"]
+Then 'd':
+
+'b':  ["b(b)"]
+'e':  ["ac(e)"]
+None: ["a", "acd"]
+Then 'e':
+
+'b':  ["b(b)"]
+None: ["a", "acd", "ace"]
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+433. Minimum Genetic Mutation
+https://leetcode.com/problems/minimum-genetic-mutation/
+
+This solution employs a Breadth First Search approach with double-ended queue to perform a step-by-step mutagenesis. Time complexity is linear: O(N). Space complexity is linear: O(N).
+
+Comment. The idea of this approach is to change (mutate) one letter (the correct term is nucleotide) at a time and see whether or not any of the mutated genes (single nucleotide polymorphisms, SNP) are present in the gene bank. If yes, they are then used on the next iteration of mutagenesis.
+
+class Solution 
+{
+public:
+    int minMutation(string start, string end, vector<string>& bank) 
+    {
+        deque<pair<string,int>> q({{start,0}});
+        set<string> b(bank.begin(), bank.end());
+        vector<char> nucleotides = {'A', 'T', 'G', 'C'};
+        
+        while (!q.empty())
+        {
+            auto [g, m] = q.front(); q.pop_front();
+            if (g == end) return m;
+            
+            for (int i = 0; i < g.size(); ++i)
+                for (char n : nucleotides)
+                {
+                    string gm = g; gm[i] = n;
+                    if (b.count(gm))
+                    {
+                        b.erase(gm);
+                        q.emplace_back(gm, m+1);
+                    }
+                }
+        } 
+        return -1;
+    }
+};
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+2265. Count Nodes Equal to Average of Subtree
+https://leetcode.com/problems/count-nodes-equal-to-average-of-subtree/
+
+We iterate to each and every node by using any traversal (preorder, postorder, inorder). I used preorder.
+From each and every node we calculate sum of its subtree nodes and also maintain a cnt variable to store the no. of nodes, so that we can calculate average.
+If average is equal to value of the root, we increment the ans.
+
+Time complexity : O(n^2)
+
+class Solution {
+public:
+    int ans = 0;
+    int sum(TreeNode* root, int& cnt){
+        if(root==NULL) return 0;
+        cnt++;
+        int left = sum(root->left,cnt);
+        int right = sum(root->right,cnt);
+        return (root->val + left + right);
+    }
+    void solve(TreeNode* root){
+        if(root==NULL) return;
+        int cnt = 0;
+        int avg = (sum(root,cnt))/cnt;
+        if(avg==root->val) ans++;
+        solve(root->left);
+        solve(root->right);
+    }
+    int averageOfSubtree(TreeNode* root) {
+        ans = 0;
+        solve(root);
+        return ans;
+    }
+};
+
+**Optimization: **
+
+Before we calculated the sum for every sub tree.
+Here we do a postorder traversal, we will calculate the sum of nodes in left sub tree and cnt of nodes in left subtree , as well as for right subtree and use this to root.
+
+Time complexity: O(n)
+
+class Solution {
+public:
+    int ans = 0;
+    pair<int,int> solve(TreeNode* root){
+        if(root==NULL) return {0,0};
+        
+        auto left = solve(root->left);
+        int l_sum = left.first; // sum of nodes present in left sub tree
+        int l_cnt = left.second; // no. of nodes present in left sub tree
+        
+        auto right = solve(root->right);
+        int r_sum = right.first; // sum of nodes present in right sub tree
+        int r_cnt = right.second; // no. of nodes present in left sub tree
+        
+        int sum = root->val + l_sum + r_sum;
+        int cnt = l_cnt + r_cnt + 1;
+        
+        if(root->val == sum/cnt) ans++;
+        return {sum,cnt};
+    }
+    int averageOfSubtree(TreeNode* root) {
+        solve(root);
+        return ans;
+    }
+};
