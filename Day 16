@@ -1,0 +1,120 @@
+174. Dungeon Game
+https://leetcode.com/problems/dungeon-game/
+
+Use hp[i][j] to store the min hp needed at position (i, j), then do the calculation from right-bottom to left-up.
+
+Note: adding dummy row and column would make the code cleaner.
+
+class Solution {
+public:
+    int calculateMinimumHP(vector<vector<int> > &dungeon) {
+        int M = dungeon.size();
+        int N = dungeon[0].size();
+        // hp[i][j] represents the min hp needed at position (i, j)
+        // Add dummy row and column at bottom and right side
+        vector<vector<int> > hp(M + 1, vector<int>(N + 1, INT_MAX));
+        hp[M][N - 1] = 1;
+        hp[M - 1][N] = 1;
+        for (int i = M - 1; i >= 0; i--) {
+            for (int j = N - 1; j >= 0; j--) {
+                int need = min(hp[i + 1][j], hp[i][j + 1]) - dungeon[i][j];
+                hp[i][j] = need <= 0 ? 1 : need;
+            }
+        }
+        return hp[0][0];
+    }
+};
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2327. Number of People Aware of a Secret
+https://leetcode.com/problems/number-of-people-aware-of-a-secret/
+
+Intuition
+Sliding window, calculatint the number of people who will share the secrets.
+
+
+Explanation
+dp[i] means the number of people who found the secret on ith day.
+share is the number of people who are going to share the secrets.
+On the ith day,
+dp[i - delay] people found the secret delay days before,
+starting to share the secret.
+so share += dp[i - delay]
+
+dp[i - forget] people found the secret forget days before,
+and forgot the secret today.
+so share -= dp[i - forget]
+and we assign dp[i] = share.
+
+
+Complexity
+Time O(n)
+Space O(n)
+
+C++
+
+    int peopleAwareOfSecret(int n, int delay, int forget) {
+        vector<long> dp(n + 1);
+        dp[1] = 1;
+        int share = 0, mod = 1e9 + 7, res = 0 ;
+        for (int i = 2; i <= n; ++i)
+            dp[i] = share = (share + dp[max(i - delay, 0)] - dp[max(i - forget, 0)] + mod) % mod;
+        for (int i = n - forget + 1; i <= n; ++i)
+            res = (res + dp[i]) % mod;
+        return res;
+    }
+
+
+Solution2
+Time O(n)
+Space O(forget)
+
+C++
+
+    int peopleAwareOfSecret(int n, int delay, int forget) {
+        vector<long> dp(forget);
+        dp[0] = 1;
+        long mod = 1e9 + 7, share = 0;
+        for (int i = 1; i < n; ++i)
+            dp[i % forget] = share = (share + dp[(i - delay + forget) % forget] - dp[i % forget] + mod) % mod;
+        return accumulate(dp.begin(), dp.end(), 0L) % mod;
+    }
+    
+    
+    
+    
+    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+2343. Query Kth Smallest Trimmed Number
+https://leetcode.com/problems/query-kth-smallest-trimmed-number/
+    
+Just do as question says. Don't try to overthink like saving query | thinking solution like tries or any tree, pre-computation or using priority_queue (Yes I also thought because I am fool. lol ). Just see the constrains and just do it.
+
+class Solution {
+public:
+    vector<int> smallestTrimmedNumbers(vector<string>& nums, vector<vector<int>>& queries) {
+        vector<int> res;
+        int n = nums.size();
+        for(auto &q:queries) {
+            vector<pair<string,int>> pq;
+            for(int i=0;i<n; i++) {
+                pq.push_back({(nums[i].substr(nums[i].size()-q[1])), i});
+            }
+            sort(pq.begin(), pq.end());
+            res.push_back(pq[q[0]-1].second);
+        }
+        return res;
+    }
+};
+Note :
+most of us getting confused by leading 0. So let me explain the problem, if you removed leading 0 than what you'll face :
+
+arr = ["123", "092"];
+
+in this case if you sort the arr you'll get expected result i.e. ["092" , "123" ] but what if we removed leading 0
+arr=["123", "92"];
+now sort it. Boom what you get ? is this right? we'll get ["123", "92"] because of alphabetical order 1 is less than 9.
