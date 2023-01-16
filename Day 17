@@ -1,0 +1,192 @@
+698. Partition to K Equal Sum Subsets
+https://leetcode.com/problems/partition-to-k-equal-sum-subsets/
+
+Assume sum is the sum of nums[] . The dfs process is to find a subset of nums[] which sum equals to sum/k. We use an array visited[] to record which element in nums[] is used. Each time when we get a cur_sum = sum/k, we will start from position 0 in nums[] to look up the elements that are not used yet and find another cur_sum = sum/k.
+
+An corner case is when sum = 0, my method is to use cur_num to record the number of elements in the current subset. Only if cur_sum = sum/k && cur_num >0, we can start another look up process.
+
+Some test cases may need to be added in:
+nums = {-1,1,0,0}, k = 4
+nums = {-1,1}, k = 1
+nums = {-1,1}, k = 2
+nums = {-1,1,0}, k = 2
+...
+
+C++:
+
+    bool canPartitionKSubsets(vector<int>& nums, int k) {
+        int sum = 0;
+        for(int num:nums)sum+=num;
+        if(k <= 0 || sum%k != 0)return false;
+        vector<int> visited(nums.size(), 0);
+        return canPartition(nums, visited, 0, k, 0, 0, sum/k);
+    }
+    
+    bool canPartition(vector<int>& nums, vector<int>& visited, int start_index, int k, int cur_sum, int cur_num, int target){
+        if(k==1)return true;
+        if(cur_sum == target && cur_num >0 )return canPartition(nums, visited, 0, k-1, 0, 0, target);
+        for(int i = start_index; i<nums.size(); i++){
+            if(!visited[i]){
+                visited[i] = 1;
+                if(canPartition(nums, visited, i+1, k, cur_sum + nums[i], cur_num++, target))return true;
+                visited[i] = 0;
+            }
+        }
+        return false;
+    }
+    
+    
+    
+    
+    
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+638. Shopping Offers
+https://leetcode.com/problems/shopping-offers/
+    
+The algorithm is:
+
+Calculate the total price without using any offers.
+For each offer:
+2.a) Apply it to the current needs
+2.b) Check if needs doesn't have any negative values, i.e. that we are not buying more items than needed (this is not allowed by definition)
+2.c) Calculate the best price with the current offer by adding the offer's value and recursing with the updated needs.
+2.d) Backtrack by adding the offer back to the needs.
+    int shoppingOffers(vector<int>& price, vector<vector<int>>& special, vector<int>& needs) {
+        int bestPrice = calculateWOOffers(price, needs);
+        for (const auto& sp : special) {
+            substractOffer(sp, needs);
+            if (noNegatives(needs)) {
+                int withOffer = sp.back() + shoppingOffers(price, special, needs);
+                bestPrice = min(bestPrice, withOffer);
+            }
+            addOffer(sp, needs);
+        }
+
+        return bestPrice;
+    }
+    
+    int calculateWOOffers(const vector<int>& price, const vector<int>& needs) {
+        int totalPrice{0};
+        for (size_t i = 0; i < price.size(); ++i)
+            totalPrice += price[i] * needs[i];
+        return totalPrice;
+    }
+    
+    void substractOffer(const vector<int>& special, vector<int>& needs) {
+        for (size_t i = 0; i < needs.size(); ++i)
+            needs[i] -= special[i];
+    }
+    
+    void addOffer(const vector<int>& special, vector<int>& needs) {
+        for (size_t i = 0; i < needs.size(); ++i)
+            needs[i] += special[i];
+    }
+    
+    bool noNegatives(const vector<int>& needs) {
+        for (int n : needs)
+            if (n < 0)
+                return false;
+        return true;
+    }
+    
+    
+    
+    
+    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+1171. Remove Zero Sum Consecutive Nodes from Linked List
+https://leetcode.com/problems/remove-zero-sum-consecutive-nodes-from-linked-list/
+
+Intuition
+Assume the input is an array.
+Do you know how to solve it?
+Scan from the left, and calculate the prefix sum.
+Whenever meet the seen prefix,
+remove all elements of the subarray between them.
+
+
+Solution 1
+Because the head ListNode can be removed in the end,
+I create a dummy ListNode and set it as a previous node of head.
+prefix calculates the prefix sum from the first node to the current cur node.
+
+Next step, we need an important hashmap m (no good name for it),
+It takes a prefix sum as key, and the related node as the value.
+
+Then we scan the linked list, accumulate the node's value as prefix sum.
+
+If it's a prefix that we've never seen, we set m[prefix] = cur.
+If we have seen this prefix, m[prefix] is the node we achieve this prefix sum.
+We want to skip all nodes between m[prefix] and cur.next (exclusive).
+So we simplely do m[prefix].next = cur.next.
+We keep doing these and it's done.
+
+
+Complexity
+Time O(N), one pass
+SpaceO(N), for hashmap
+
+C++:
+
+    ListNode* removeZeroSumSublists(ListNode* head) {
+        ListNode* dummy = new ListNode(0), *cur = dummy;
+        dummy->next = head;
+        int prefix = 0;
+        map<int, ListNode*> m;
+        while (cur) {
+            prefix += cur->val;
+            if (m.count(prefix)) {
+                cur =  m[prefix]->next;
+                int p = prefix + cur->val;
+                while (p != prefix) {
+                    m.erase(p);
+                    cur = cur->next;
+                    p += cur->val;
+                }
+                m[prefix]->next = cur->next;
+            } else {
+                m[prefix] = cur;
+            }
+            cur = cur->next;
+        }
+        return dummy->next;
+    }
+
+Soluiton 2: Two Passes
+The story is that,
+I wrote the really concise solution,
+it got accepted but actully it's wrong.
+I fixed it by adding another while loop.
+That is the Solution 1.
+
+If we don't insist on one pass,
+we can find the two passes is actually really neat.
+
+That turned back to the intuition that I mentioned:
+Assume the input is an array.
+How will you solve the problem?
+
+Iterate for the first time,
+calculate the prefix sum,
+and save the it to seen[prefix]
+
+Iterate for the second time,
+calculate the prefix sum,
+and directly skip to last occurrence of this prefix
+
+C++
+
+    ListNode* removeZeroSumSublists(ListNode* head) {
+        ListNode* dummy = new ListNode(0);
+        dummy->next = head;
+        int prefix = 0;
+        unordered_map<int, ListNode*> seen;
+        for (ListNode* i = dummy; i; i = i->next) {
+            seen[prefix += i->val] = i;
+        }
+        prefix = 0;
+        for (ListNode* i = dummy; i; i = i->next) {
+            i->next = seen[prefix += i->val]->next;
+        }
+        return dummy->next;
+    }
