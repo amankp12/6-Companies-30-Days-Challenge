@@ -1,0 +1,233 @@
+1823. Find the Winner of the Circular Game
+https://leetcode.com/problems/find-the-winner-of-the-circular-game/
+
+1. Brute Force Solution : CIRCULAR LINKED LIST
+
+/* Time Complexity : O(n*k)  Space Complexity : O(n) */
+If we look at the question, it says that the people are playing the game on a round table. That means, A Circular Linked List can be used to visualize the round table. We store 1,2,3,4,.......,n as the nodes of our List and go on deleting every kth node that we encounter. When we are left with only 1 node i.e. the head node, it is our WINNER. Since we are consuming extra space for Circular Linked List so, our Space Complexity goes to O(n).
+
+class Solution {
+public:
+    int helper(ListNode *head,int k){
+        ListNode *temp=head;  //For traversing through the List and delete every kth Node 
+        while(head->next!=head){   //Till the last Node remains in the list i.e. the winner
+            ListNode *pre=NULL;
+            for(int i=1; i<k; i++){
+                pre=temp;
+                temp=temp->next;
+            }
+            //Deletion procedure
+            if(temp==head)
+                head=head->next;
+            pre->next=temp->next;
+            delete(temp);
+            temp=pre->next;
+        }
+        //The last node remaining becomes the head of the Circular Linked List i.e. Winner
+        return head->val;
+    }
+    int findTheWinner(int n, int k) {
+        if(k==1)
+            return n;
+        //Designing Circular Linked List for Node 1,2,3,4,.....,n
+        ListNode *head=NULL,*tail=NULL;
+        for(int i=1; i<=n; i++){
+            ListNode *node=new ListNode(i);
+            if(head==NULL)
+                head=tail=node;
+            else{
+                tail->next=node;
+                tail=node;
+            }
+            tail->next=head;
+        }
+        //Helper function will eliminate the nodes and give us the winner
+        return helper(head,k);
+    }
+};
+2. Simple Solution : RECURSION
+
+/* Time Complexity : O(n)  Space Complexity : O(n) */
+This problem can also be solved using Recursion. If you observe, you can see that we are doing the same activity again and again i.e. deleting every kth element we encounter. Therefore, we can think towards the recursive approach also.
+Intution : If I have the winner for 'n-1' and 'k'. I can find the winner for 'n' and 'k' by moving on to the next kth person (i.e. f(n) = f(n-1)+k). Keeping in mind that they are sitting on a round table we have to rotate also (i.e. f(n) = (f(n-1)+k)%n).
+
+class Solution {
+public:
+    int helper(int n,int k){
+        if(n==1)
+            return 0;
+        return (helper(n-1,k) + k) % n;
+    }
+    int findTheWinner(int n, int k) {
+        return helper(n,k)+1;   //+1 is for converting 0-based indexing to 1-based indexing
+    }
+};
+Note : You might think that you have not taken any extra space in for the problem so the space complexity is O(1) but this is not true. The function calls are stored in the Stack memory of the machine and therefore these recursive calls end up making a Stack at the machine end. So, the Space Complexity for this program goes to O(n). INTERESTING HUH XD
+
+3. Optimised Solution : ITERATIVE APPROACH
+
+/* Time Complexity : O(n)  Space Complexity : O(1) */
+We can simply convert our Recursive Solution into Iterative Solution. This will bring no change in the Time Complexity but the Space Complexity will be optimised from O(n) to O(1). Our intution remains the same and looks very much similar to our Recursive Solution.
+
+class Solution {
+public:
+    int helper(int n,int k){
+        int ans = 0;
+        for(int i=1; i<=n; i++){
+            ans = (ans + k) % i;
+        }
+        return ans;
+    }
+    int findTheWinner(int n, int k) {
+        return helper(n,k)+1;   //+1 is for conterting 0-based indexing to 1-based indexing
+    }
+};
+Note : Since, we are doing the problem Iteratively. So, extra space is not consumed neither from our side nor from machine's side. Therefore the space complexity of our program is optimised to O(1).
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1095. Find in Mountain Array
+https://leetcode.com/problems/find-in-mountain-array/
+
+If we divide A in half, one subarray is in the increasing / decreasing order, the other is a mountain array that has the peak index.
+That helps abandon one subarray.
+Then in the moutain subarray, we keep dividing...
+Until the searching space is exhausted, we can find the peak index.
+The loop invariant is the peak index is in [left, right].
+
+The peak index divides A in half, one subarray is in the increasing order, the other is in the decreasing order.
+We aim to find the index of target in A if target exists.
+We can do Binary Search on two subarrays separately.
+The loop invariant is the target index is in [left, right].
+
+    public int findInMountainArray(int target, MountainArray A) {
+        int left = 0, right = A.length() - 1;
+        // Find the peak index
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if (A.get(mid) < A.get(mid + 1)) {
+                left = mid + 1;
+            } else { 
+                right = mid;
+            }
+        }
+        int peak = left;
+        
+        // Binary search on increasing subarray
+        left = 0;
+        right = peak;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (A.get(mid) < target) {
+                left = mid + 1;
+            } else if (A.get(mid) > target) { 
+                right = mid - 1;
+            } else {
+                return mid;
+            }
+        }
+        
+        // Binary search on decreasing subarray
+        left = peak;
+        right = A.length() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (A.get(mid) < target) {
+                right = mid - 1;
+            } else if (A.get(mid) > target) { 
+                left = mid + 1;
+            } else {
+                return mid;
+            }
+        }
+        return -1;
+    }
+    
+    
+    
+    
+    
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+1977. Number of Ways to Separate Numbers
+https://leetcode.com/problems/number-of-ways-to-separate-numbers/
+    
+    Solution 1. DP
+Let dp[i][j] be the number of ways to split num[0..j] with the last number starting at index i (0 <= i <= j < N).
+
+The answer is ∑i=0N−1dp[i][N−1]\sum\limits_{i=0}^{N-1}{dp[i][N-1]} 
+i=0
+∑
+N−1
+
+ dp[i][N−1]
+
+For the second to last number num[k..(i-1)] of length i - k and the last number num[i..j] of length j + 1 - i:
+
+If i - k < j + 1 - i, we add dp[k][i-1] to dp[i][j]. So dp[i][j] += sum( dp[k][i-1] | max(0, 2*i-j) <= k < i )
+If i - k == j + 1 - i, i.e. k == 2*i-j-1, we need to compare num[k..(i-1)] and num[i..j], and add dp[k][i-1] to dp[i][j] if num[k..(i-1)] <= num[i..j].
+If i - k > j + 1 - i, skip.
+// 0 <= i <= j < N
+dp[i][j] = sum( dp[k][i-1] | max(0, 2*i-j) <= k < i )                        // Case 1
+           + (k == 2*i-j-1 && num[k..(i-1)] <= num[i..j] ? dp[k][i-1] : 0)   // Case 2
+
+dp[0][i] = 1 
+For case 1 and case 2, they will take O(N) time without optimization, resulting in a overall time complexity of O(N^3).
+
+Case 1 Optimization:
+
+Let SUM[i][j] = sum( dp[k][i-1] | max(0, 2*i-j) <= k < i ).
+
+We can see that for a specific i, when j increases, the left bound of k's range decreases while right bound stays the same. So we optimize it using suffix sum.
+
+SUM[i][j-1] =                  dp[2*i-j+1][i-1] + dp[2*i-j+2][i-1] + ... + dp[i-1][i-1]
+
+SUM[i][j]   = dp[2*i-j][i-1] + dp[2*i-j+1][i-1] + dp[2*i-j+2][i-1] + ... + dp[i-1][i-1]
+So:
+
+// For j >= i+1
+SUM[i][j] = SUM[i][j-1] + dp[2*i-j][i-1]
+// For j == i
+SUM[i][i] = 0
+
+Case 2 Optimization:
+
+Let lcp[i][j] be the length of the longest common prefix of num[i..(N-1)] and num[j..(N-1)]. We can pre-compute lcp with O(N^2) time and O(N^2) space.
+
+Now we just need to compare next character after the longest common prefixes of these two numbers.
+
+After Optimization:
+
+// Time: O(N^2)
+// Space: O(N^2)
+class Solution {
+public:
+    int numberOfCombinations(string num) {
+        if (num[0] == '0') return 0;
+        long N = num.size(), ans = 0, mod = 1e9 + 7;
+        vector<vector<long>> lcp(N + 1, vector<long>(N + 1)), dp(N + 1, vector<long>(N + 1));
+        for (int i = N - 1; i >= 0; --i) {
+            for (int j = N - 1; j >= 0; --j) {
+                if (num[i] == num[j]) lcp[i][j] = lcp[i + 1][j + 1] + 1;
+            }
+        }
+        auto le = [&](int k, int i, int j) {
+            int len = lcp[k][i];
+            return len >= j + 1 - i || num[k + len] < num[i + len];
+        };
+        for (int j = 0; j < N; ++j) dp[0][j] = 1;
+        for (int i = 1; i < N; ++i) {
+            if (num[i] == '0') continue;
+            for (int j = i, k = i - 1, sum = 0; j < N; ++j) {
+                dp[i][j] = sum; // case 1
+                if (k < 0) continue; // if k < 0, case 2 (equal length) is invalid but we still need to continue to handle case 1, so we should use `continue` here.
+                if (num[k] > '0' && le(k, i, j)) dp[i][j] = (dp[i][j] + dp[k][i - 1]) % mod; // case 2
+                sum = (sum + dp[k][i - 1]) % mod; // update the sum used in case 1.
+                --k;
+            }
+        }
+        for (int i = 0; i < N; ++i) ans = (ans + dp[i][N - 1]) % mod;
+        return ans;
+    }
+};
