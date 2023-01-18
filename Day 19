@@ -1,0 +1,120 @@
+1334. Find the City With the Smallest Number of Neighbors at a Threshold Distance
+https://leetcode.com/problems/find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance/
+
+Explanation
+Becasue O(N^3) is accepted in this problem, we don't need a very fast solution.
+we can simply use Floyd algorithm to find the minium distance any two cities.
+
+Reference Floyd–Warshall algorithm
+
+Iterate all point middle point k,
+iterate all pairs (i,j).
+If it go through the middle point k,
+dis[i][j] = dis[i][k] + dis[k][j].
+
+
+Complexity
+Time O(N^3)
+Space O(N^2)
+
+C++
+
+    int findTheCity(int n, vector<vector<int>>& edges, int distanceThreshold) {
+        vector<vector<int>> dis(n, vector(n, 10001));
+        int res = 0, smallest = n;
+        for (auto& e : edges)
+            dis[e[0]][e[1]] = dis[e[1]][e[0]] = e[2];
+        for (int i = 0; i < n; ++i)
+            dis[i][i] = 0;
+        for (int k = 0; k < n; ++k)
+            for (int i = 0; i < n; ++i)
+                for (int j = 0; j < n; ++j)
+                    dis[i][j] = min(dis[i][j], dis[i][k] + dis[k][j]);
+        for (int i = 0; i < n; i++) {
+            int count = 0;
+            for (int j = 0; j < n; ++j)
+                if (dis[i][j] <= distanceThreshold)
+                    ++count;
+            if (count <= smallest) {
+                res = i;
+                smallest = count;
+            }
+        }
+        return res;
+    }
+    
+    
+    
+    
+    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+2523. Closest Prime Numbers in Range
+https://leetcode.com/problems/closest-prime-numbers-in-range/
+
+We use Sieve of Eratosthenes to find all primes <= 1000000.
+
+We store those primes in a global array, so we can reuse it between test cases.
+
+Then, we use a binary search to find the smallest prime in the range, and then check all consecutive primes.
+
+The complexity of this approach is π(n) - number of primes up to n (assuming that the precomputation is amortized).
+
+C++
+
+vector<int> p{2};
+bool sieve[1000001] = {};
+class Solution {
+public:
+vector<int> closestPrimes(int left, int right) {
+    if (p.size() == 1)
+        for (long long i = 3; i < 1000001; i += 2)
+            if (!sieve[i]) {
+                p.push_back(i);
+                for (long long d = i * i; d < 1000001; d += i)
+                    sieve[d] = true;
+            }
+    int n1 = -1, n2 = -1, i = lower_bound(begin(p), end(p), left) - begin(p);
+    for (; i + 1 < p.size() && p[i + 1] <= right; ++i)
+        if (n1 == -1 || p[i + 1] - p[i] < n2 - n1) {
+            n1 = p[i];
+            n2 = p[i + 1];
+            if (n2 - n1 < 3)
+                break;
+        }
+    return {n1, n2};
+}
+};
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+692. Top K Frequent Words
+https://leetcode.com/problems/top-k-frequent-words/
+
+class cmp{
+    public:
+    bool operator()(pair<int,string> a, pair<int,string> b) const{
+        if(a.first < b.first) return true;
+        else if(a.first == b.first && a.second>b.second) return true;
+        return false;
+    }
+};
+class Solution {
+public:
+    vector<string> topKFrequent(vector<string>& words, int k) {
+        unordered_map<string,int> ump;
+        for(auto &w : words) ump[w]++;
+        
+        priority_queue<pair<int,string>,vector<pair<int,string>>,cmp> pq;
+        for(auto &m : ump) pq.push({m.second,m.first});
+        
+        vector<string> vec;
+        while(k--){
+            vec.push_back(pq.top().second);
+            pq.pop();
+        }
+        return vec;
+    }
+};
