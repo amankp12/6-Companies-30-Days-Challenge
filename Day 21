@@ -1,0 +1,192 @@
+695. Max Area of Island
+https://leetcode.com/problems/max-area-of-island/
+
+Idea:
+So we can just use a simple iteration through the grid and look for islands. When we find an island, we can use a recursive helper function (trav) to sum up all the connected pieces of land and return the total land mass of the island.
+
+As we traverse over the island, we can replace the 1s with 0s to prevent "finding" the same land twice. We can also keep track of the largest island found so far (ans), and after the grid has been fully traversed, we can return ans.
+
+Time Complexity: O(N * M) where N and M are the lengths of the sides of the grid
+Space Complexity: O(L) where L is the size of the largest island, representing the maximum recursion stack
+or O(N * M + L) if we create an N * M matrix in order to not modify the input
+
+C++ Code:
+The best result for the code below is 8ms / 23.0MB (beats 100% / 95%).
+
+class Solution {
+public:
+    int maxAreaOfIsland(vector<vector<int>>& grid) {
+        int ans = 0;
+        n = grid.size(), m = grid[0].size();
+        for (int i = 0; i < n; i++) 
+            for (int j = 0; j < m; j++)
+                if (grid[i][j]) ans = max(ans, trav(i, j, grid));
+        return ans;
+    }
+private:
+    int n, m;
+    int trav(int i, int j, vector<vector<int>>& grid) {
+        if (i < 0 || j < 0 || i >= n || j >= m || !grid[i][j]) return 0;
+        grid[i][j] = 0;
+        return 1 + trav(i-1, j, grid) + trav(i, j-1, grid) + trav(i+1, j, grid) + trav(i, j+1, grid);
+    }
+};
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+791. Custom Sort String
+https://leetcode.com/problems/custom-sort-string/
+
+Idea
+
+Let cnt[c] is the number of occurencies of character c in string str.
+Firstly, we prioritize to traverse characters c in order, so that we can keep the order of str same with the order of order:
+If cnt[c] > 0 -> We append character c to the answer cnt[c] times.
+Finally, we traverse characters c from a to z to add remain characters which may not appear in orders:
+If cnt[c] > 0 -> We append character c to the answer cnt[c] times.
+
+C++
+
+class Solution { // 0 ms, faster than 100.00%
+public:
+    string customSortString(string order, string str) {
+        int cnt[128] = {};
+        for (char c : str) ++cnt[c];
+        int i = 0;
+        for (char c : order) {
+            while (cnt[c] > 0) {
+                str[i++] = c;
+                --cnt[c];
+            }
+        }
+        for (char c = 'a'; c <= 'z'; ++c) {
+            while (cnt[c] > 0) {
+                str[i++] = c;
+                --cnt[c];
+            }
+        }
+        return str;
+    }
+};
+Complexity:
+
+Time: O(N), where N is the length of string str.
+Extra Space:O(1)
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+337. House Robber III
+https://leetcode.com/problems/house-robber-iii/
+
+We are given a binary tree consisting of houses. We need to find maximum loot that we can get without robbing two directly linked houses
+
+Solution - I (Brute-Force)
+
+Let's try to solve this starting with brute-force.
+At each house/node of the tree, we have the choice to either rob it or not to rob it
+If we rob the current node, we cannot rob the left or right child of the current node
+If we dont rob the current node, we can move to the left and right nodes and rob them
+We choose the option which yields us the maximum loot
+We can implement this in two ways-
+
+In 1st implementation below, I have used a boolean canRob variable denoting whether we can rob the current node or not. Each time we move to child nodes with canRob parameter set to true or false depending on whether the current node was robbed or not.
+In the 2nd implementation, we never move to directly linked nodes when we rob the current node. So we can either not rob the current node, or we can rob it and move to both child nodes of root -> left and root -> right if they exists.
+I found 1st version a bit simpler but the 2nd version will be better for optimization into dp.
+
+1st Implementation
+
+class Solution {
+public:
+    int rob(TreeNode* root, bool canRob = true) {
+        if(!root) return 0;
+        int dontRob = rob(root -> left, true) + rob(root -> right, true);
+        int robRoot = canRob ? root -> val + rob(root -> left, false) + rob(root -> right, false) : -1;
+        return max(dontRob, robRoot);
+    }
+};
+2nd Implementation
+
+class Solution {
+public:
+    int rob(TreeNode* root) {
+        if(!root) return 0;
+        int dontRob = rob(root -> left) + rob(root -> right), robRoot = root -> val;
+        if(root -> left) robRoot += rob(root -> left -> left) + rob(root -> left -> right);
+        if(root -> right) robRoot += rob(root -> right -> left) + rob(root -> right -> right);
+        return max(dontRob, robRoot);
+    }
+};
+
+Time Complexity : O(2N), where N is the number of nodes in the tree.
+Space Complexity : O(H), where H is the height of the tree. H is the max recursion depth & thus O(H) space is required by recursive stack. It is O(N) in case of skewed tree and O(logN) in case of balanced binary tree.
+
+Solution - II (Dynamic Programming)
+
+Drawing out the recursion tree, we can see that there are multiple repeated computations taking place. But call to rob() with same parameters should always give us the same result which is maximum possible loot that we can get starting from that node. So, instead of doing repeated computations over and over again, we can simply save the result for a given state of function and directly return the same result when repeated call is made.
+
+Here, for the 1st case, we use a dp hashmap where dp[node][canRob] denotes the maximum possible loot that we can get starting from node in the tree & canRob denotes whether it can be robbed or not. Note that in this case we needed to save the complete state of function into dp which includes canRob parameter as well.
+Similarly, for 2nd case, we use dp hashmap where dp[node] denotes the maximum possible loot that we can get starting from node in the tree.
+
+1st Implementation
+
+class Solution {
+public:
+    unordered_map<TreeNode*, vector<int>> dp;
+    int rob(TreeNode* root, bool canRob = true) {
+        if(!root) return 0;
+        if(dp.count(root) && dp[root][canRob] != -1) return dp[root][canRob];
+        dp[root] = {-1,-1};
+        int dontRob = rob(root -> left, true) + rob(root -> right, true);
+        int robRoot = canRob ? root -> val + rob(root -> left, false) + rob(root -> right, false) : -1;
+        return dp[root][canRob] = max(dontRob, robRoot);
+    }
+};
+2nd Implementation
+
+class Solution {
+public:
+    unordered_map<TreeNode*, int> dp;
+    int rob(TreeNode* root) {
+        if(!root) return 0;
+        if(dp.count(root)) return dp[root];
+        int dontRob = rob(root -> left) + rob(root -> right), robRoot = root -> val;
+        if(root -> left) robRoot += rob(root -> left -> left) + rob(root -> left -> right);
+        if(root -> right) robRoot += rob(root -> right -> left) + rob(root -> right -> right);
+        return dp[root] = max(dontRob, robRoot);
+    }
+};
+
+Time Complexity : O(N), we calculate dp[node] for each of N nodes in the tree only once.
+Space Complexity : O(N), required for maintaining dp
+
+Solution - III (Space-Optimized Dynamic Programming)
+
+In the above solutions, we recursed for both cases when current node was robbed and current node wasn't robbed and depending on the result from both cases, we decided which one to choose. This led to separate dfs calls with multiple states, one with current node's state as being robbed and other one with the state being not robbed. This required us memoize the results to avoid repeated calls to a node's state which was already calculated in one of earlier dfs call.
+
+Going a slightly different route, instead of doing separate calls, we just make a single dfs call to left and right child nodes (without differentiating the state of current node) and return the results for both the cases of the child nodes being robbed and not robbed. We can then calculate the result for current node for -
+
+state when current node is robbed which will be equal to current node's value + sum of result of child nodes not being robbed.
+state when current node is NOT robbed which will be equal to sum of result of child nodes in their maximum loot state (i.e, for each child node, choose its state of either being robbed or not robbed, whichever gave maximum loot).
+To summarize, this approach issues a single dfs call down till the leaf node and from there it propagates upwards the value of 1. maximum loot when child node is not robbed and, 2. maximum loot when child node is robbed. This allows us to calculate result for both states of current node being robbed and not being robbed without the need of memoizing the results for child nodes.
+
+class Solution {
+public:
+    int rob(TreeNode* root) {
+        auto ans = dfs(root);
+        return max(ans.first, ans.second);
+    }
+    pair<int, int> dfs(TreeNode* root) {
+        if(!root) return {0, 0};
+        auto [leftDontRob, leftRob]   = dfs(root -> left);
+        auto [rightDontRob, rightRob] = dfs(root -> right);
+        return {
+            max(leftDontRob, leftRob) + max(rightDontRob, rightRob),
+            root -> val + leftDontRob + rightDontRob
+        };
+    }
+};
