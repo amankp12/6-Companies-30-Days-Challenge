@@ -1,0 +1,151 @@
+904. Fruit Into Baskets
+https://leetcode.com/problems/fruit-into-baskets/
+
+Problem
+"Start from any index, we can collect at most two types of fruits. What is the maximum amount"
+
+
+Translation
+Find out the longest length of subarrays with at most 2 different numbers?
+
+
+Explanation
+Solve with sliding window,
+and maintain a hashmap counter,
+which count the number of element between the two pointers.
+Find more infinite similar prolems in the end.
+
+
+Complexity
+Time O(n)
+Space O(1)
+
+C++:
+
+    int totalFruit(vector<int> &tree) {
+        unordered_map<int, int> count;
+        int i, j;
+        for (i = 0, j = 0; j < tree.size(); ++j) {
+            count[tree[j]]++;
+            if (count.size() > 2) {
+                if (--count[tree[i]] == 0)count.erase(tree[i]);
+                i++;
+            }
+        }
+        return j - i;
+    }
+    
+    
+    
+    
+    
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+1254. Number of Closed Islands
+https://leetcode.com/problems/number-of-closed-islands/
+
+This problem is easy. You just need to figure out the fact that any island will be "surrounded" if it can't reach the boundary. Let me explain.
+So we know that once we start DFS from any cell, it will move in all four directions provided they are unvisited and have a 0, and it will stop if it meets an unvisited or a 1. So, if DFS call from a cell is not reaching any of the matrix's boundary, that means there must have been a 1 in its way. Therefore, if it can't reach any of the boundaries, then that states that there are 1 in its way terminating the DFS call for that connected component, and thus that connected component becomes a land which is surrounded by water from all sides. You can refer to the example image.
+image
+
+Here, you can see that once you start DFS call from cell (1,1), it will track down all the 0s which are in the same connected component and when it encounters 1 in its way, it halts.
+The zeros, or the connected components that can reach to any of the four boundaries can never be fully closed by water. Therefore, in the above example, we can only have two closed islands.
+
+NOTE : In this problem, there is only one thing different from normal DFS. Since we need to check if any dfs call reaches any of the four corner or not, therefore we need to have a boolean return type of dfs function. That creates an issue that if we just do return fun(move left) && fun(move right) && fun(move up) && fun(move down), then it could happen that fun(move left) return false, due to which the remaining three calls will not be done. This creates an issue because it will not cover all the cells of a connected component, since we just moved in one direction from a cell and got false, so we returned. Therefore, to tackle this, we store the result of all the four calls in four different variables and then return their combined result. This way, we will mark all the cells of a connected component as visited.
+In case you did not get this NOTE, you can refer to the cases below the code.
+
+class Solution {
+public:
+    int dx[4] = {1,0,-1,0};
+    int dy[4] = {0,1,0,-1};
+    
+    int closedIsland(vector<vector<int>>& grid) {
+        int m = grid.size(), n = grid[0].size();
+        vector <vector <int>> visited(m, vector <int>(n,0));
+        
+        int count = 0;
+        for(int i = 0; i<m; i++){
+            for(int j = 0; j<n; j++){
+                if(grid[i][j]==0 and visited[i][j]==0)
+                    if(dfs(i,j,grid,visited)) count++;
+            }
+        }
+        return count;
+    }
+protected:
+    bool isvalid(int x, int y, int m, int n, vector <vector <int>>&grid, vector <vector <int>>&visited){
+        if(visited[x][y] or grid[x][y]) return false;
+        return true;
+    }
+    bool dfs(int x, int y, vector <vector <int>>&grid, vector <vector <int>>&visited){
+        if(!isvalid(x,y,grid.size(),grid[0].size(),grid,visited)) return true;
+        
+        if(x==grid.size()-1 or x==0 or y==grid[0].size()-1 or y==0) return false;
+        
+        visited[x][y] = 1;
+        
+        bool left = dfs(x,y-1,grid,visited);
+        bool right = dfs(x,y+1,grid,visited);
+        bool up = dfs(x-1,y,grid,visited);
+        bool down = dfs(x+1,y,grid,visited);
+        
+        return left and right and up and down;
+    }
+};
+/*
+[[0,0,1,1,0,1,0,0,1,0],[1,1,0,1,1,0,1,1,1,0],[1,0,1,1,1,0,0,1,1,0],[0,1,1,0,0,0,0,1,0,1],[0,0,0,0,0,0,1,1,1,0],[0,1,0,1,0,1,0,1,1,1],[1,0,1,0,1,1,0,0,0,1],[1,1,1,1,1,1,0,0,0,0],[1,1,1,0,0,1,0,1,0,1],[1,1,1,0,1,1,0,1,1,0]]
+[[1,1,0,1,1,1,1,1,1,1],[0,0,1,0,0,1,0,1,1,1],[1,0,1,0,0,0,1,0,1,0],[1,1,1,1,1,0,0,1,0,0],[1,0,1,0,1,1,1,1,1,0],[0,0,0,0,1,1,0,0,0,0],[1,0,1,0,0,0,0,1,1,0],[1,1,0,0,1,1,0,0,0,0],[0,0,0,1,1,0,1,1,1,0],[1,1,0,1,0,1,0,0,1,0]]
+*/
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+1316. Distinct Echo Substrings
+https://leetcode.com/problems/distinct-echo-substrings/
+
+Simple Brute force will be to check every 2 adjacent substring of all lengths. We can improve our solution to O(n^2) using string Hashing.
+I would recommend reading string hashing in cp-algo website to easily understand this important concept.
+The steps followed are:
+
+Select 2 primes, for many cases based on simple text, p=31 works. The other big prime is taken to be 1000000009.
+Pre calculate the power of p upto n.
+Calculate the hash for all prefix substring of the string.
+Now we consider all substring of length L. We check if the hash of both half of this substring is equal. If yes, we can mark this hash in a map. This handles all the duplicates.
+Rest of the explanation is in code. Comment for any doubt.
+#define ll long long
+class Solution {
+public:
+    ll p=31;
+    ll m=1000000009;
+    int distinctEchoSubstrings(string text) {
+        ll n=text.size();
+        vector <ll> p_pow(n);
+        p_pow[0]=1;
+        for(ll i=1;i<n;i++)
+            p_pow[i]=(p_pow[i-1]*p)%m;
+        vector <ll> hash(n+1,0);
+        for(ll i=0;i<n;i++)
+        {
+		   hash[i+1]= (hash[i] + (text[i]-'a'+1)*p_pow[i])%m; //dont forget the 1 here, or else "aa" and "aaa" will map to the same value
+        }
+        //for(int i=0;i<=n;i++)
+           // cout<<hash[i]<< " ";
+        unordered_map <ll ,ll > um;
+        for(ll l=2;l<=n;l+=2)
+        {
+            for(ll i=0;i+l<=n;i++)
+            {
+                ll curr1= (hash[i+l/2]+m-hash[i])%m; // +m for ensuring +ve remainder
+                curr1=(curr1*p_pow[n-i-1])%m; 
+                ll curr2= (hash[i+ l] +m - hash[i+l/2])%m; 
+                curr2=(curr2*p_pow[n-i-1-l/2])%m;
+                //cout<<curr1<<" "<<curr2<<endl;
+                if(curr1==curr2)
+                {
+                    um[curr1]++; //mark this substring's hash as visited
+                }
+            }
+        }
+        return um.size();
+    }
+};
