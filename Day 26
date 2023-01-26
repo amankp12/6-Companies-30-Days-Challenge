@@ -1,7 +1,7 @@
 778. Swim in Rising Water
 https://leetcode.com/problems/swim-in-rising-water/
 
-❌ Solution - I (Brute-Force)
+Solution - I (Brute-Force)
 
 We can observe that the problem basically asks us to find a path such that the maximum waterLevel w_lvl (value of a cell) of some intermediate cell of that path is minimized.
 We can start with the brute force approach and explore all the possible paths to reach the end of the grid. The path which minimizes the maximum value of some cell in a path will be chosen and that water level - w_lvl will be our answer.
