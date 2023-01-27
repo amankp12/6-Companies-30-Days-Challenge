@@ -1,0 +1,220 @@
+384. Shuffle an Array
+https://leetcode.com/problems/shuffle-an-array/
+
+Motive
+Our motive in this question is to find a random permutation of an array on demand. Now this random permutation should be trully random with a uniform probability distribution.
+In other words, for any call to shuffle(), all permutations of the array should have equal probability of being returned.
+
+Let's try doing it by hand. We take the elements of the array in a bag and shuffle them, then for each position in the shuffled array, we draw one element from the bag, and put that element in that position, and so on, until the bag is empty.
+We can simulate this exact process in our code by maintaining a copy of the original array and generating a random index of the array to put at each index.
+
+But the problem arises in the exclusion of the selected elements from the bag. We could do a normal array delete (or shift) and that would cost us O(n) in the worst case, making our time complexity O(n2), but we can do better.
+
+
+Approach
+The bottleneck that's causing us all this trouble is, ironically the bag itself. So why not, merge it with something else we are storing, such that it can be updated easily?
+We maintain two parts of the array, the already-shuffled part, and the unshuffled part. The unshuffled part is at the beginning of the array, and the shuffled part is built from the last element onwards. At every iteration, we draw an element from the unshuffled part and swap it with the current element, effectively removing the drawn element and adding the replaced element to the bag. Then we reduce the size of the bag to account for the reduction in size of the unshuffled part.
+Continuing in this way, we generate the whole shuffled array and then return it.
+
+
+Proof of Randomness
+Now, how do we prove that this is indeed a random draw from all the possible permutations of the array, and not from a subset?
+
+Let's see it this way,
+The probability for a particular element to be selected as the ith element is 1/i (as we randomly draw a number from i elements). Thus, for a particular element, the probability of it being at the nth position in the array is 1/n. (where n is the size of the array). i.e P(n) = 1/n
+
+What about the probability of it being at the (n-1)th position?
+For it to be in the (n-1)th position, it needs to be rejected at the nth position and then accepted at the (n-1)th position.
+Thus P(n-1) = ((n-1)/n) * (1/n-1) , or P(n-1) = 1/n
+
+In this way, we can prove that P(i) = 1/n for all 1 <= i <= n (1-indexed position), which in turn, means that every permutation of the array is equally likely.
+
+
+Code
+class Solution {
+	vector<int> original;
+	int n;
+public:
+
+	Solution(vector<int>& nums) {
+		original = nums;
+		n = original.size();
+	}
+	
+	vector<int> reset() {
+		return original;
+	}
+	
+	vector<int> shuffle() {
+			//make a copy of the original
+			vector<int> shuffled = original;
+			
+			int leftSize = n;
+			for(int i = n-1; i>=0; i--) {
+				//draw from the bag
+				int j = rand()%leftSize;
+				
+				//put this element at current position
+				//and put the original element in the bag
+				swap(shuffled[i], shuffled[j]);
+				leftSize--;
+			}
+			return shuffled;
+	}
+	
+};
+
+Fancy Words
+Both the methods described above are called Fisher Yates Algorithm for random shuffling, with the second one being optimised for O(n) performance.
+
+Time: O(n) as we traverse the array only once
+Space: O(1) if we don't consider the return array as extra space. Otherwise O(n).
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+787. Cheapest Flights Within K Stops
+https://leetcode.com/problems/cheapest-flights-within-k-stops/
+
+Intuition of this Problem
+We can solve this problem using various ways:
+
+Dijkstra Algorithm - Time Complexity - O(V^2)
+Floyd Warshall Algoithm - Time Complexity - O(v^3)
+Bellman Ford Algorithm - Time Complexity - O(V^3)
+I used simple BFS to solve the problem. For furhter optimization in this solution we can use priority queue. But In this solution I didn't use.
+
+Approach for this Problem
+Initialize an adjacency list with the given flights information, where each index i represents the node i, and the corresponding value is a list of pairs (neighbor, price) representing the edges from node i to its neighboring nodes and the price of the flight.
+Initialize a queue with the source node and its cost (0) and a vector minCost with the same size as the number of nodes, where each index i represents the minimum cost to reach node i and the corresponding value is initialized to INT_MAX.
+Create a variable stops and initialize it to 0.
+Start a while loop until the queue is not empty and stops are less than or equal to k (maximum stops allowed).
+In the while loop, create a variable size equal to the size of the queue.
+Start another while loop with the size of the queue.
+In the inner while loop, pop the front element from the queue and assign it to a variable (currNode, cost).
+Iterate through the neighbors and price of the current node from the adjacency list.
+If the total cost to reach the neighbor is greater than or equal to the minimum cost to reach the neighbor, continue to the next iteration.
+Else, update the minimum cost to reach the neighbor as the total cost and push the neighbor and its cost to the queue.
+End the inner while loop and increment the stops by 1.
+End the outer while loop.
+If the minimum cost to reach the destination is still INT_MAX, return -1, otherwise, return the minimum cost to reach the destination.
+
+Code
+class Solution {
+public:
+    int findCheapestPrice(int n, vector<vector<int>>& flights, int src, int dst, int k) {
+        vector<vector<pair<int, int>>> adj(n);
+        for(auto flight : flights){
+            // flight[0] represent node i, flight[1] represent neighbor node of node i, flight[2] represent cost between node i to neighbor node
+            adj[flight[0]].push_back({flight[1], flight[2]});
+        }
+        //it will store [node, cost]
+        queue<pair<int, int>> q;
+        q.push({src, 0});
+        //it will store minimum cost to reach each node
+        vector<int> minCost(n, INT_MAX);
+        int stops = 0;
+        while(!q.empty() && stops <= k){
+            int size = q.size();
+            while (size--) {
+                auto [currNode, cost] = q.front();
+                q.pop();
+                for (auto& [neighbour, price] : adj[currNode]) {
+                    if (price + cost < minCost[neighbour]){
+                        minCost[neighbour] = price + cost;
+                        q.push({neighbour, minCost[neighbour]});
+                    }
+                }
+            }
+            stops++;
+        }
+        if(minCost[dst] == INT_MAX)
+            return -1;
+        return minCost[dst];
+    }
+};
+
+Time Complexity and Space Complexity
+
+Time complexity: O(V + E*K)
+The time complexity of this code is O(V + E*K) where E is the number of flights, and V is the number of cities. The reason for this is that the outer while loop runs for at most V iterations, and in each iteration, the inner while loop runs for at most E iterations.However, the maximum number of times an edge can be processed is limited by K.
+Space complexity: O(V + E)
+The space complexity of this code is O(V + E), as it uses two data structures to store the graph (a list of lists) and the minimum cost to reach each node (an array of integers). The queue used to keep track of the next node to visit also takes up O(V) space.
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+1593. Split a String Into the Max Number of Unique Substrings
+https://leetcode.com/problems/split-a-string-into-the-max-number-of-unique-substrings/
+
+I have not yet seen a well explained bit twiddeling solution so here is mine:
+
+How many ways are there to divide the string S?
+Answer: Let N = S.length(). Let the characters be a1,a2...,an . Then there are N-1 fences between the characters: a1 | a2 | a3 .. | an. Well each fence can either exist or not. This means that for each fence there are 2 states. Each fence is unique so there are 2*2*2...*2 number of unique divisions or 2^(N-1) divisions. So let's say we have N=3 characters and two fences. Then there are 4 (=2^N-1) possible divisions:
+a1 | a2 | a3
+a1 | a2 a3
+a1 a2 | a3
+a1 a2 a3
+
+How can we represent the fences efficiently?
+Answer: Since each fence can either exist or not, bits are perfect. If a fence exists then we represent it with a 1 and if not then a 0. Since there are N-1 fences we need a type with at least N-1 bits. The maximum N is 16 so a 32 bit integer should be more than enough.
+
+How can we iterate through all possible solutions?
+Answer: Lets examine the problem with 3 letters again but this time let's look at the bit representation of the fences:
+11 = 3
+10 = 2
+01 = 1
+00 = 0
+Iterestingly enough these are all the numbers smaller than 2^(N-1). So it will be extremely easy to iterate all the possible solutions! Just a simple for loop from 0 to 2^(N-1).
+for(int fences = 0; fences < pow(2,N-1); ++fences)
+But what does pow(2,n) actually represent in binary? For example pow(2,0) = 1 = 000...001b, pow(2,1) = 2 = 000..010b, pow(2,2) = 4 = 000...100b. Notice that it just shifts 1 n bits to the left. So pow(2,N-1) = 1<<N-1
+
+How do we generate the actual strings?
+Answer: We will use the fences to divide the string! All the characters between two fences (or the begining and the first fence or the last fence and the end) form a single string. With our example a1 a2 | a3 the strings will be a1a2 and a3.
+
+How do we know if the strings are unique?
+Answer: This is easy! Just keep a set of all the strings and check if the current string is already in the set. If so then the strings are obviously not unique and the solution is NOT a valid one.
+
+BONUS: If you want to optimize your solution even more then we can count the number of set bits and if they are less than the best found solution yet then just skip processing it. Let's say for example the best solution yet is a1a2a3 | a4 | a5 | a6a7. The bit representation of this solution would be 001110b. Now lets say we are processing the solution 010010. We can skip it because it has only two set bits which will divide the string into 3 and this is worse than the current best!
+
+CODE:
+
+class Solution {
+public:
+    int maxUniqueSplit(string s) {
+        uint32_t maxi = 1;
+        int32_t N = s.size();
+        for(uint32_t fences = 0; fences < (1<<N-1); ++fences)
+        {
+            if(__builtin_popcount(fences) < maxi)
+                continue;
+            
+            std::unordered_set<std::string> S;
+            std::string curr{s[0]};
+            bool unique = true;
+            for(int32_t bit = 0; bit < N-1; ++bit)
+            {
+                if(fences>>bit&1)
+                {
+                    if(!S.insert(curr).second)
+                    {
+                        unique = false;
+                        break;
+                    }
+                    
+                    curr.clear();
+                }
+                curr.push_back(s[bit+1]);
+            }
+            if(!S.insert(curr).second)
+                continue;
+            if(unique)
+                maxi = std::max(maxi,(uint32_t)S.size());
+        }
+        return maxi;
+    }
+}
