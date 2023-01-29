@@ -1,0 +1,110 @@
+649. Dota2 Senate
+https://leetcode.com/problems/dota2-senate/
+
+This is obliviously a greedy algorithm problem. Each senate R must ban its next closest senate D who is from another party, or else D will ban its next senate from R's party.
+
+The idea is to use two queues to save the index of each senate from R's and D's parties, respectively. During each round, we delete the banned senate's index; and plus the remainning senate's index with n(the length of the input string senate), then move it to the back of its respective queue.
+
+C++:
+string predictPartyVictory(string senate) {
+        queue<int> q1, q2;
+        int n = senate.length();
+        for(int i = 0; i<n; i++)
+            (senate[i] == 'R')?q1.push(i):q2.push(i);
+        while(!q1.empty() && !q2.empty()){
+            int r_index = q1.front(), d_index = q2.front();
+            q1.pop(), q2.pop();
+            (r_index < d_index)?q1.push(r_index + n):q2.push(d_index + n);
+        }
+        return (q1.size() > q2.size())? "Radiant" : "Dire";
+    }
+    
+    
+    
+    
+    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2126. Destroying Asteroids
+https://leetcode.com/problems/destroying-asteroids/
+
+Intuition :
+
+Idea is to simply sort the asteroids list. & then we need to collide planet with asteroid.
+There are 2 cases :
+If planetMass >= asteroid, then we merge it. and continue
+
+else we planet get destroyed, and return false.
+
+In the end if all asteroids are collided, then return true
+This is basically a Greedy approach and we need to simulate the collision process.
+Code :
+class Solution {
+public:
+    bool asteroidsDestroyed(int mass, vector<int>& asteroids) {
+        
+        int n = asteroids.size();
+        sort(begin(asteroids), end(asteroids));
+        
+        long long planetMass = mass;
+        
+        for(auto& asteroid : asteroids) {
+            if(planetMass < asteroid) return false; 
+			planetMass += asteroid;
+        }
+        return true;
+    }
+};
+Complexity :
+
+Time : O(NlogN + N), N is size of asteroids list
+Space : O(1)
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2456. Most Popular Video Creator
+https://leetcode.com/problems/most-popular-video-creator/
+
+/*
+Consider two map - one for keep track of total views and second for tracking best id with max view for each creator.
+
+So the map storage looks like : { creator : view_count } & { creator : {view_count, id } }
+
+So now just we need to keep track of max view count while adding to the map, and at the end, acan for the creators with sam view as that of max view found.
+
+Note: Do not forget to define view count as long long as the view count can be more than max int size.
+*/
+
+class Solution {
+public:
+    vector<vector<string>> mostPopularCreator(vector<string>& creators, vector<string>& ids, vector<int>& views) {
+        
+        unordered_map<string, long long> mp;
+        unordered_map<string, pair<int, string>> imp;
+        long long mx = -1;
+        for(int i = 0; i < creators.size(); ++i){
+            long long v = views[i];
+            if(mp.find(creators[i]) == mp.end()) mp[creators[i]] = v; 
+            else mp[creators[i]] += v;
+            if(mx < mp[creators[i]]) mx = mp[creators[i]];
+            
+            if(imp.find(creators[i]) == imp.end())   imp[creators[i]] = {views[i], ids[i]};
+            else{                                                           //Evaluate max view for each creator
+                if( imp[creators[i]].first < views[i])  imp[creators[i]] = {views[i], ids[i]};
+                else if(imp[creators[i]].first == views[i] && imp[creators[i]].second > ids[i]){
+                    imp[creators[i]] = {views[i], ids[i]};
+                }
+            }
+        }
+        
+        vector<vector<string>> ans;
+        for(auto m: mp){                         //scan for the creators with view equal to max
+            if(mx == m.second){
+                ans.push_back({m.first, imp[m.first].second});
+            }
+        }
+        return ans;
+    }
+};
