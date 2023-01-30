@@ -23,7 +23,7 @@ Complexity
 Time: O(M * N), where M <= 5000 is length of words array and N <= 5*10^4 is length of string s
 Space: O(1)
 
-✔️ Approach 2: Process by bucket
+Approach 2: Process by bucket
 
 Since length of string s is big, let's think a way to iterate chracters in string s once.
 We can group words into buckets by their starting character.
