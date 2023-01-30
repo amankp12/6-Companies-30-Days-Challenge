@@ -1,0 +1,176 @@
+792. Number of Matching Subsequences
+https://leetcode.com/problems/number-of-matching-subsequences/
+
+Approach 1: Naive Brute force (Time Limit Exceeded)
+
+For each word in words, check if word is a subsequence of string s.
+class Solution:
+    def isSubsequence(self, s, t):  # Return true if `t` is a subsequence of `s`
+        i = 0
+        for c in s:
+            if i == len(t): return True
+            if c == t[i]: i += 1    
+        return i == len(t)
+        
+    def numMatchingSubseq(self, s: str, words: List[str]) -> int:
+        ans = 0
+        for word in words:
+            if self.isSubsequence(s, word):
+                ans += 1
+        return ans
+Complexity
+
+Time: O(M * N), where M <= 5000 is length of words array and N <= 5*10^4 is length of string s
+Space: O(1)
+
+✔️ Approach 2: Process by bucket
+
+Since length of string s is big, let's think a way to iterate chracters in string s once.
+We can group words into buckets by their starting character.
+Then we iterate characters c in string s, we process words in bucket[c] by trimming their starting character:
+If the word after trimming is empty -> then it's a subsequence of string s -> ans += 1.
+Else group the word after trimming into corresponding buckets by its starting character.
+
+struct Node {
+    const string& word;
+    int index;
+    Node(const string &word, int index) : word(word), index(index) {}
+};
+class Solution {
+public:
+    int numMatchingSubseq(const string& s, vector<string>& words) {
+        vector<Node> buckets[26];
+        for (string& word : words) {
+            char startingChar = word[0];
+            buckets[startingChar-'a'].emplace_back(word, 0);
+        }
+        int ans = 0;
+        for (char c : s) {
+            auto currBucket = buckets[c-'a'];
+            buckets[c-'a'].clear();
+            for (Node& node : currBucket) {
+                ++node.index; // Point to next character of node.word
+                if (node.index == node.word.size()) {
+                    ++ans;
+                } else {
+                    buckets[node.word[node.index]-'a'].push_back(node);
+                }
+            }
+        }
+        return ans;
+    }
+};
+
+Complexity
+
+Time: O(N + S), where N <= 5*10^4 is length of string s, S <= 5000*50 is sum length of all words
+Space: O(M), where M <= 5000 is size of words.
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2400. Number of Ways to Reach a Position After Exactly k Steps
+https://leetcode.com/problems/number-of-ways-to-reach-a-position-after-exactly-k-steps/
+
+Top-Down DP
+Instead of positions, we can track the distance between them.
+
+The distance is non-negative, so it's easier to memoise.
+
+For k number of steps and distance d, the number of ways is dfs(k - 1, d + 1) + dfs(k - 1, abs(d - 1)).
+
+Note that for d == 0, the nuber of ways is dfs(k - 1, 1) + dfs(k - 1, 1), since abs(0 - 1) == 1.
+We can reach 0 from positions 1 and -1, and the number of ways for negative positions mirrors positive positions.
+
+C++
+
+int dp[1001][1001] = {}, mod = 1000000007;
+class Solution {
+public:
+int dfs(int k, int d) {
+    if (d >= k)
+        return d == k;
+    if (dp[k][d] == 0)
+        dp[k][d] = (1 + dfs(k - 1, d + 1) + dfs(k - 1, abs(d - 1))) % mod;
+    return dp[k][d] - 1;
+} 
+int numberOfWays(int startPos, int endPos, int k) {
+    return dfs(k, abs(startPos - endPos));
+}
+};
+Bottom-Up DP
+We can precompute the tabulation once. From there, all test cases are O(1).
+
+We 'fix' the start at zero, and consider the distance to the end (always positive). The tabulation sort of looks like the Pascal triangle:
+
+1 
+0 1
+2 0 1
+0 3 0 1
+6 0 4 0 1
+0 10 0 5 0 1
+20 0 15 0 6 0 1
+0 35 0 21 0 7 0 1
+70 0 56 0 28 0 8 0 1
+0 126 0 84 0 36 0 9 0 1
+252 0 210 0 120 0 45 0 10 0 1
+(note that the Pascal triangle is used to precompute nCr, so this approach is similar to a combinatorics solution)
+
+For k steps:
+
+we can reach distance k in one way. This makes sense.
+we can reach distance 0 in dp[k - 1][1] + dp[k - 1][1] ways. This is because we can approach zero from left and right (their ways are mirrored).
+for distance i, we can reach it in dp[k - 1][i + 1] + dp[k - 1][i - 1] ways.
+C++
+
+int dp[1001][1001] = {}, mod = 1000000007;
+class Solution {
+public:
+int numberOfWays(int startPos, int endPos, int k) {
+    if (dp[1][1] == 0)
+        for (int k = 1; k <= 1000; ++k) {
+            dp[k][k] = 1;
+            for (int i = 0; i < k; ++i)
+                dp[k][i] = (dp[k - 1][abs(i - 1)] + dp[k - 1][i + 1]) % mod;
+        }
+    return dp[k][abs(startPos - endPos)];
+}
+};
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+718. Maximum Length of Repeated Subarray
+https://leetcode.com/problems/maximum-length-of-repeated-subarray/
+
+Solution 1: Dynamic Programming
+
+It's the classic Longest Common Substring problem, can be used by using Dynamic Programming.
+Let dp[i][j] is the longest common suffix between nums1[0..i-1] and nums2[0..j-1].
+
+class Solution { // 344 ms, faster than 21.07%
+public:
+    int findLength(vector<int>& nums1, vector<int>& nums2) {
+        int m = nums1.size(), n = nums2.size();
+        vector<vector<int>> dp(m+1, vector<int>(n+1));
+        int ans = 0;
+        for (int i = 1; i <= m; ++i) {
+            for (int j = 1; j <= n; ++j) {
+                if (nums1[i-1] == nums2[j-1])
+                    dp[i][j] = dp[i-1][j-1] + 1;
+                else dp[i][j] = 0;
+                ans = max(ans, dp[i][j]);
+            }
+        }
+        return ans;
+    }
+};
+
+Complexity:
+
+Time: O(M*N), where M <= 1000 is length of nums1, N <= 1000 is length of nums2.
+Space: O(M*N)
